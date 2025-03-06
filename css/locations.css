@@ -1,0 +1,196 @@
+/* Карта */
+#map {
+    border-radius: 12px;
+    width: 100%;
+    background: var(--dark-surface);
+}
+
+/* Кастомизация Leaflet для темной темы */
+.leaflet-container {
+    background: #242424;
+}
+
+.leaflet-tile {
+    filter: brightness(0.6) invert(1) contrast(3) hue-rotate(200deg) saturate(0.3) brightness(0.7);
+}
+
+.leaflet-control-zoom a {
+    background-color: var(--dark-surface) !important;
+    color: var(--text-primary) !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.leaflet-popup-content-wrapper {
+    background: var(--dark-surface);
+    color: var(--text-primary);
+}
+
+.leaflet-popup-tip {
+    background: var(--dark-surface);
+}
+
+/* Список точек */
+.locations-filters {
+    background: var(--dark-surface);
+    padding: 1.5rem;
+    border-radius: 15px;
+}
+
+.locations-list {
+    max-height: 520px;
+    overflow-y: auto;
+    padding-right: 0.5rem;
+}
+
+.locations-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.locations-list::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+}
+
+.locations-list::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+}
+
+.locations-list::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+/* Карточка точки */
+.location-item {
+    background: var(--dark-surface);
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.location-item:hover {
+    background: var(--dark-surface-hover);
+}
+
+.location-info {
+    flex: 1;
+    margin-right: 1rem;
+}
+
+.location-info h5 {
+    color: var(--text-primary);
+    margin: 0 0 0.5rem;
+    font-size: 1.1rem;
+}
+
+.location-address {
+    color: var(--text-secondary);
+    margin: 0 0 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.location-address i {
+    color: var(--primary-color);
+}
+
+.location-stats {
+    display: flex;
+    gap: 1rem;
+}
+
+.stat-item {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.stat-item i {
+    color: var(--primary-color);
+}
+
+/* Действия */
+.location-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.btn-icon {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+}
+
+.btn-icon:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+}
+
+/* Формы */
+.form-control, .form-select {
+    background-color: var(--dark-bg);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+}
+
+.form-control:focus, .form-select:focus {
+    background-color: var(--dark-bg);
+    border-color: var(--primary-color);
+    color: var(--text-primary);
+    box-shadow: 0 0 0 0.25rem rgba(124, 77, 255, 0.25);
+}
+
+.form-control::placeholder {
+    color: var(--text-secondary);
+}
+
+.input-group .form-control:not(:last-child) {
+    border-right: none;
+}
+
+.input-group .form-control:not(:first-child) {
+    border-left: none;
+}
+
+/* Модальное окно */
+.modal-content {
+    background: var(--dark-surface);
+    color: var(--text-primary);
+}
+
+.modal-header, .modal-footer {
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.btn-close {
+    filter: invert(1) grayscale(100%) brightness(200%);
+}
+
+/* Адаптивность */
+@media (max-width: 992px) {
+    .locations-list {
+        max-height: 400px;
+    }
+    
+    .location-stats {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+} 
+
+.leaflet-control {
+    display: none;
+}

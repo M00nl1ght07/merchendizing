@@ -1,0 +1,114 @@
+/* Навигация по настройкам */
+.settings-nav {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+}
+
+.settings-nav .btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    background: var(--dark-surface);
+    border: none;
+}
+
+.settings-nav .btn.active {
+    background: var(--primary-color);
+}
+
+.settings-nav .btn i {
+    font-size: 1.1rem;
+}
+
+/* Секции настроек */
+.settings-section {
+    display: none;
+}
+
+.settings-section.active {
+    display: block;
+}
+
+/* Элементы настроек */
+.notification-item,
+.integration-item,
+.setting-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.notification-item:last-child,
+.integration-item:last-child,
+.setting-item:last-child {
+    border-bottom: none;
+}
+
+.notification-info h6,
+.integration-info h6,
+.setting-info h6 {
+    color: var(--text-primary);
+    margin-bottom: 0.25rem;
+}
+
+.notification-info p,
+.integration-info p,
+.setting-info p {
+    color: var(--text-secondary);
+    margin-bottom: 0;
+    font-size: 0.875rem;
+}
+
+/* Интеграции */
+.integration-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.integration-logo {
+    width: 40px;
+    height: 40px;
+    object-fit: contain;
+}
+
+/* Form switches */
+.form-check-input {
+    background-color: var(--dark-bg);
+    border-color: var(--text-secondary);
+}
+
+.form-check-input:checked {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .settings-nav {
+        flex-direction: column;
+    }
+
+    .settings-nav .btn {
+        width: 100%;
+    }
+
+    .notification-item,
+    .integration-item,
+    .setting-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .notification-controls,
+    .integration-item button,
+    .setting-control {
+        width: 100%;
+    }
+} 

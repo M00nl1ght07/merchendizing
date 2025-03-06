@@ -150,4 +150,57 @@
     .brand-title {
         font-size: 1.5rem;
     }
+}
+
+/* Стили для индикатора силы пароля */
+.password-strength {
+    margin-top: 0.5rem;
+}
+
+.strength-bar {
+    height: 4px;
+    border-radius: 2px;
+    background: var(--dark-bg);
+    margin-bottom: 0.25rem;
+    transition: all 0.3s ease;
+}
+
+.strength-bar.weak {
+    width: 33.33%;
+    background: #dc3545;
+}
+
+.strength-bar.medium {
+    width: 66.66%;
+    background: #ffc107;
+}
+
+.strength-bar.strong {
+    width: 100%;
+    background: #198754;
+}
+
+.strength-text {
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+}
+
+.terms-link {
+    color: var(--primary-color);
+    text-decoration: none;
+}
+
+.terms-link:hover {
+    text-decoration: underline;
+}
+
+/* Дополнительные стили для мобильных устройств */
+@media (max-width: 576px) {
+    .row {
+        margin: 0;
+    }
+    
+    .col-md-6 {
+        padding: 0;
+    }
 } 

@@ -1,0 +1,164 @@
+/* Фильтры */
+.analytics-filters {
+    background: var(--dark-surface);
+    padding: 1.5rem;
+    border-radius: 15px;
+}
+
+/* Метрики */
+.metric-card {
+    background: var(--dark-surface);
+    border-radius: 15px;
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.metric-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: rgba(124, 77, 255, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.metric-icon i {
+    font-size: 24px;
+    color: var(--primary-color);
+}
+
+.metric-info {
+    flex: 1;
+}
+
+.metric-info h3 {
+    color: var(--text-primary);
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.metric-info p {
+    color: var(--text-secondary);
+    margin: 0;
+    font-size: 0.875rem;
+}
+
+/* Графики */
+canvas {
+    width: 100% !important;
+    height: 300px !important;
+}
+
+/* Таблица */
+.table-analytics {
+    color: var(--text-primary);
+    margin: 0;
+    background: var(--dark-surface);
+}
+
+.table-analytics thead {
+    background: var(--dark-bg);
+}
+
+.table-analytics th {
+    color: var(--text-secondary);
+    font-weight: 500;
+    border-bottom-color: rgba(255, 255, 255, 0.1);
+    padding: 1rem 1.5rem;
+    background: var(--dark-surface);
+}
+
+.table-analytics td {
+    padding: 1rem 1.5rem;
+    vertical-align: middle;
+    border-bottom-color: rgba(255, 255, 255, 0.1);
+    background: var(--dark-surface);
+    color: white;
+}
+
+.table-analytics tbody tr:hover td {
+    background: var(--dark-surface-hover);
+}
+
+/* Прогресс бар в таблице */
+.progress-bar-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    min-width: 200px;
+}
+
+.progress {
+    flex: 1;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.progress-bar {
+    background: var(--primary-color);
+    border-radius: 3px;
+}
+
+/* Информация о мерчандайзере в таблице */
+.merchandiser-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: var(--text-primary);
+}
+
+.avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+/* Формы */
+.form-control, .form-select {
+    background-color: var(--dark-bg);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+}
+
+.form-control:focus, .form-select:focus {
+    background-color: var(--dark-bg);
+    border-color: var(--primary-color);
+    color: var(--text-primary);
+    box-shadow: 0 0 0 0.25rem rgba(124, 77, 255, 0.25);
+}
+
+.form-control::placeholder {
+    color: var(--text-secondary);
+}
+
+/* Кастомизация Chart.js */
+.chartjs-tooltip {
+    background: var(--dark-surface) !important;
+    color: var(--text-primary) !important;
+    border-radius: 8px !important;
+    padding: 8px 12px !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .metric-card {
+        margin-bottom: 1rem;
+    }
+    
+    .table-analytics td, 
+    .table-analytics th {
+        padding: 0.75rem;
+    }
+    
+    .progress-bar-wrapper {
+        flex-direction: column;
+        gap: 0.5rem;
+        align-items: flex-start;
+    }
+} 

@@ -200,3 +200,7 @@
         align-items: flex-start;
     }
 } 
+
+button:not(:disabled) {
+    color: white;
+}

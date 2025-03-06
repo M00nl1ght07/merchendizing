@@ -114,12 +114,15 @@
                                         <button class="btn btn-icon" data-bs-toggle="dropdown">
                                             <i class="fa fa-ellipsis-v"></i>
                                         </button>
-                                        <ul class="dropdown-menu">
-                                            <li><a class="dropdown-item" href="#"><i class="fa fa-edit"></i> Редактировать</a></li>
-                                            <li><a class="dropdown-item" href="#"><i class="fa fa-chart-bar"></i> Статистика</a></li>
-                                            <li><hr class="dropdown-divider"></li>
-                                            <li><a class="dropdown-item text-danger" href="#"><i class="fa fa-trash"></i> Удалить</a></li>
-                                        </ul>
+                                        <div class="dropdown-menu">
+                                            <button class="dropdown-item" onclick="editMerchandiser('${name}')">
+                                                <i class="fa fa-pencil"></i> Редактировать
+                                            </button>
+                                            <div class="dropdown-divider"></div>
+                                            <button class="dropdown-item text-danger" onclick="deleteMerchandiser('${name}')">
+                                                <i class="fa fa-trash"></i> Удалить
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="merchandiser-stats">
@@ -191,6 +194,35 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
                     <button type="submit" form="addMerchandiserForm" class="btn btn-primary">Добавить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно редактирования мерчандайзера -->
+    <div class="modal fade" id="editMerchandiserModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Редактировать мерчандайзера</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editMerchandiserForm">
+                        <div class="mb-3">
+                            <label class="form-label">ФИО</label>
+                            <input type="text" class="form-control" name="name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Регион</label>
+                            <select class="form-select" name="region" required>
+                                <option value="Москва">Москва</option>
+                                <option value="Санкт-Петербург">Санкт-Петербург</option>
+                                <option value="Казань">Казань</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Сохранить</button>
+                    </form>
                 </div>
             </div>
         </div>

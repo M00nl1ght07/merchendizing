@@ -64,9 +64,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 case 'Редактировать':
                     editMerchandiser(name);
                     break;
-                case 'Статистика':
-                    showStats(name);
-                    break;
                 case 'Удалить':
                     deleteMerchandiser(name, card);
                     break;
@@ -98,14 +95,37 @@ function showNotification(message) {
 
 // Функции для работы с мерчандайзерами
 function editMerchandiser(name) {
-    // Здесь будет логика редактирования
-    console.log('Редактирование:', name);
+    // Открываем модальное окно редактирования
+    const modal = new bootstrap.Modal(document.getElementById('editMerchandiserModal'));
+    
+    // Находим данные мерчандайзера
+    const merchandiserCard = document.querySelector(`.merchandiser-card:has(h5:contains("${name}"))`);
+    const region = merchandiserCard.querySelector('.region span').textContent;
+    
+    // Заполняем форму текущими данными
+    const form = document.getElementById('editMerchandiserForm');
+    form.querySelector('[name="name"]').value = name;
+    form.querySelector('[name="region"]').value = region;
+    
+    // Показываем модальное окно
+    modal.show();
 }
 
-function showStats(name) {
-    // Здесь будет логика показа статистики
-    console.log('Просмотр статистики:', name);
-}
+// Обработчик формы редактирования
+document.getElementById('editMerchandiserForm')?.addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    // Здесь будет отправка данных на сервер
+    const formData = new FormData(this);
+    console.log('Редактирование мерчандайзера:', Object.fromEntries(formData));
+    
+    // Закрываем модальное окно
+    const modal = bootstrap.Modal.getInstance(document.getElementById('editMerchandiserModal'));
+    modal.hide();
+    
+    // Показываем уведомление
+    showNotification('Данные мерчандайзера обновлены');
+});
 
 function deleteMerchandiser(name, card) {
     if (confirm(`Вы уверены, что хотите удалить мерчандайзера "${name}"?`)) {

@@ -142,13 +142,12 @@ document.addEventListener('DOMContentLoaded', function() {
             const locationItem = this.closest('.location-item');
             const name = locationItem.querySelector('h5').textContent;
 
-            switch(action) {
-                case 'Редактировать':
-                    editLocation(name);
-                    break;
-                case 'Удалить':
-                    deleteLocation(name, locationItem);
-                    break;
+            if (action === 'Редактировать') {
+                // Здесь будет открытие модального окна редактирования
+                const modal = new bootstrap.Modal(document.getElementById('editLocationModal'));
+                modal.show();
+            } else if (action === 'Удалить') {
+                deleteLocation(name, locationItem);
             }
         });
     });

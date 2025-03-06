@@ -111,4 +111,53 @@
     .setting-control {
         width: 100%;
     }
+}
+
+/* Добавим стили для форм в настройках */
+.settings-section .form-control,
+.settings-section .form-select {
+    background-color: var(--dark-bg);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+}
+
+.settings-section .form-control:focus,
+.settings-section .form-select:focus {
+    background-color: var(--dark-bg);
+    border-color: var(--primary-color);
+    color: var(--text-primary);
+    box-shadow: 0 0 0 0.25rem rgba(124, 77, 255, 0.25);
+}
+
+.settings-section .form-control::placeholder {
+    color: var(--text-secondary);
+}
+
+/* Формы в настройках */
+.settings-section input[type="text"],
+.settings-section input[type="tel"],
+.settings-section input[type="email"],
+.settings-section select,
+.settings-section textarea {
+    background-color: var(--dark-bg) !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+    color: var(--text-primary) !important;
+}
+
+.settings-section input:focus,
+.settings-section select:focus,
+.settings-section textarea:focus {
+    background-color: var(--dark-bg) !important;
+    border-color: var(--primary-color) !important;
+    color: var(--text-primary) !important;
+    box-shadow: 0 0 0 0.25rem rgba(124, 77, 255, 0.25) !important;
+}
+
+.settings-section input::placeholder {
+    color: var(--text-secondary) !important;
+}
+
+/* Исправляем цвет стрелки в select */
+.settings-section select {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23ffffff' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e") !important;
 } 

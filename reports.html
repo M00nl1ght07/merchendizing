@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Отчеты | MerchandiseControl</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/reports.css">
+</head>
+<body class="dark-theme">
+    <div class="dashboard-container">
+        <!-- Боковое меню -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <a href="dashboard.html" class="brand-link">
+                    <h1 class="brand-title">MC</h1>
+                </a>
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li>
+                        <a href="dashboard.html">
+                            <i class="fa fa-dashboard"></i>
+                            <span>Дашборд</span>
+                        </a>
+                    </li>
+                    <li class="active">
+                        <a href="reports.html">
+                            <i class="fa fa-file-text"></i>
+                            <span>Отчеты</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="merchandisers.html">
+                            <i class="fa fa-users"></i>
+                            <span>Мерчандайзеры</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="locations.html">
+                            <i class="fa fa-map-marker"></i>
+                            <span>Точки продаж</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="analytics.html">
+                            <i class="fa fa-line-chart"></i>
+                            <span>Аналитика</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="settings.html">
+                            <i class="fa fa-cog"></i>
+                            <span>Настройки</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <div id="header-component"></div>
+
+            <div class="dashboard-content">
+                <div class="container-fluid">
+                    <!-- Заголовок и кнопки -->
+                    <div class="reports-header">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h2>Отчеты</h2>
+                            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#uploadReportModal">
+                                <i class="fa fa-plus"></i> Загрузить отчет
+                            </button>
+                        </div>
+                        
+                        <!-- Фильтры -->
+                        <div class="reports-filters mb-4">
+                            <div class="row g-3">
+                                <div class="col-md-3">
+                                    <input type="text" class="form-control" placeholder="Поиск по названию...">
+                                </div>
+                                <div class="col-md-2">
+                                    <select class="form-select">
+                                        <option value="">Тип отчета</option>
+                                        <option>Ежедневный</option>
+                                        <option>Еженедельный</option>
+                                        <option>Месячный</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <select class="form-select">
+                                        <option value="">Статус</option>
+                                        <option>Новый</option>
+                                        <option>Проверен</option>
+                                        <option>Требует правок</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="input-group">
+                                        <input type="date" class="form-control">
+                                        <input type="date" class="form-control">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Таблица отчетов -->
+                    <div class="dashboard-card">
+                        <div class="table-responsive">
+                            <table class="table table-reports">
+                                <thead>
+                                    <tr>
+                                        <th>Название</th>
+                                        <th>Тип</th>
+                                        <th>Автор</th>
+                                        <th>Дата создания</th>
+                                        <th>Статус</th>
+                                        <th>Действия</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>
+                                            <div class="report-name">
+                                                <i class="fa fa-file-excel-o"></i>
+                                                <span>Отчет по ТЦ "Центральный"</span>
+                                            </div>
+                                        </td>
+                                        <td>Ежедневный</td>
+                                        <td>Анна Смирнова</td>
+                                        <td>06.03.2024</td>
+                                        <td><span class="badge bg-success">Проверен</span></td>
+                                        <td>
+                                            <div class="actions">
+                                                <button class="btn btn-icon" title="Просмотреть">
+                                                    <i class="fa fa-eye"></i>
+                                                </button>
+                                                <button class="btn btn-icon" title="Скачать">
+                                                    <i class="fa fa-download"></i>
+                                                </button>
+                                                <button class="btn btn-icon" title="Удалить">
+                                                    <i class="fa fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <!-- Другие строки таблицы -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Модальное окно загрузки отчета -->
+    <div class="modal fade" id="uploadReportModal">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Загрузка отчета</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="uploadReportForm">
+                        <div class="mb-3">
+                            <label class="form-label">Название отчета</label>
+                            <input type="text" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Тип отчета</label>
+                            <select class="form-select" required>
+                                <option value="">Выберите тип</option>
+                                <option>Ежедневный</option>
+                                <option>Еженедельный</option>
+                                <option>Месячный</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Файл отчета</label>
+                            <input type="file" class="form-control" accept=".xlsx,.xls" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Комментарий</label>
+                            <textarea class="form-control" rows="3"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" form="uploadReportForm" class="btn btn-primary">Загрузить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/components.js"></script>
+    <script src="js/reports.js"></script>
+</body>
+</html> 

@@ -1,0 +1,232 @@
+/* Фильтры */
+.reports-filters {
+    background: var(--dark-surface);
+    padding: 1.5rem;
+    border-radius: 15px;
+}
+
+/* Таблица отчетов */
+.table-reports {
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.table-reports th {
+    color: var(--text-secondary);
+    font-weight: 500;
+    border-bottom-color: rgba(255, 255, 255, 0.1);
+    padding: 1rem 1.5rem;
+}
+
+.table-reports td {
+    padding: 1rem 1.5rem;
+    vertical-align: middle;
+    border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+.report-name {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.report-name i {
+    color: #4CAF50;
+    font-size: 1.25rem;
+}
+
+/* Действия */
+.actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.btn-icon {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+}
+
+.btn-icon:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+}
+
+/* Модальное окно */
+.modal-content {
+    background: var(--dark-surface);
+    border: none;
+}
+
+.modal-header {
+    border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+.modal-footer {
+    border-top-color: rgba(255, 255, 255, 0.1);
+}
+
+.modal-title {
+    color: var(--text-primary);
+}
+
+.btn-close {
+    filter: invert(1) grayscale(100%) brightness(200%);
+}
+
+/* Уведомления */
+.notification {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: var(--primary-color);
+    color: white;
+    padding: 1rem 2rem;
+    border-radius: 8px;
+    animation: slideIn 0.3s ease-out;
+    z-index: 1000;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Формы и инпуты */
+.form-control, .form-select {
+    background-color: var(--dark-bg);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+}
+
+.form-control:focus, .form-select:focus {
+    background-color: var(--dark-bg);
+    border-color: var(--primary-color);
+    color: var(--text-primary);
+    box-shadow: 0 0 0 0.25rem rgba(124, 77, 255, 0.25);
+}
+
+.form-control::placeholder {
+    color: var(--text-secondary);
+}
+
+/* Таблица */
+.table {
+    --bs-table-bg: var(--dark-surface);
+    --bs-table-color: var(--text-primary);
+    --bs-table-border-color: rgba(255, 255, 255, 0.1);
+}
+
+.table-reports tr:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+/* Модальное окно */
+.modal-content {
+    background-color: var(--dark-surface);
+    color: var(--text-primary);
+}
+
+.modal-header, .modal-footer {
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.modal-header .btn-close {
+    filter: invert(1) grayscale(100%) brightness(200%);
+}
+
+/* Кнопки */
+.btn-primary {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.btn-primary:hover {
+    background-color: #6c3ce6;
+    border-color: #6c3ce6;
+}
+
+.btn-secondary {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-color: transparent;
+}
+
+.btn-secondary:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+    border-color: transparent;
+}
+
+/* Бейджи */
+.badge {
+    padding: 0.5em 0.8em;
+    font-weight: 500;
+}
+
+.badge.bg-success {
+    background-color: #2e7d32 !important;
+}
+
+.badge.bg-warning {
+    background-color: #f57c00 !important;
+    color: white;
+}
+
+.badge.bg-danger {
+    background-color: #c62828 !important;
+}
+
+/* Фильтры */
+.reports-filters {
+    background-color: var(--dark-surface);
+}
+
+.input-group-text {
+    background-color: var(--dark-surface);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: var(--text-secondary);
+}
+
+/* Выпадающие списки */
+.form-select option {
+    background-color: var(--dark-surface);
+    color: var(--text-primary);
+}
+
+/* Календарь */
+input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1) brightness(0.8);
+    opacity: 0.7;
+    cursor: pointer;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator:hover {
+    opacity: 1;
+}
+
+/* Для Firefox */
+input[type="date"] {
+    position: relative;
+}
+
+input[type="date"]::-moz-calendar-picker-indicator {
+    filter: invert(1) brightness(0.8);
+    opacity: 0.7;
+    cursor: pointer;
+}
+
+input[type="date"]::-moz-calendar-picker-indicator:hover {
+    opacity: 1;
+} 

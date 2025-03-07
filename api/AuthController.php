@@ -1,5 +1,6 @@
 <?php
 require_once 'Api.php';
+require_once __DIR__ . '/../config/mail.php';
 
 class AuthController extends Api {
     public function login() {
@@ -174,6 +175,213 @@ class AuthController extends Api {
         }
 
         return 'uploads/logos/' . $fileName;
+    }
+
+    public function forgotPassword() {
+        try {
+            // Начинаем сессию если еще не начата
+            if (session_status() === PHP_SESSION_NONE) {
+                session_start();
+            }
+            
+            $email = filter_input(INPUT_POST, 'email', FILTER_VALIDATE_EMAIL);
+            
+            if (!$email) {
+                $this->error('Введите корректный email');
+            }
+
+            // Проверяем существование пользователя
+            $stmt = $this->db->prepare('SELECT id FROM users WHERE email = ?');
+            $stmt->execute([$email]);
+            if (!$stmt->fetch()) {
+                $this->error('Пользователь с таким email не найден');
+            }
+
+            // Генерируем код
+            $code = sprintf('%06d', random_int(0, 999999));
+            
+            // Сохраняем в сессии
+            $_SESSION['reset_code'] = [
+                'code' => $code,
+                'email' => $email,
+                'expires' => time() + 3600
+            ];
+
+            // Для отладки
+            error_log("Reset code saved in session: " . print_r($_SESSION['reset_code'], true));
+
+            // Отправляем код на email
+            $subject = 'Восстановление пароля MerchandiseControl';
+            $body = "
+                <html>
+                <head>
+                    <title>Восстановление пароля</title>
+                </head>
+                <body>
+                    <h2>Восстановление пароля</h2>
+                    <p>Вы запросили восстановление пароля в системе MerchandiseControl.</p>
+                    <p>Ваш код подтверждения: <b style='font-size: 18px;'>{$code}</b></p>
+                    <p>Код действителен в течение 1 часа.</p>
+                    <p>Если вы не запрашивали восстановление пароля, проигнорируйте это письмо.</p>
+                </body>
+                </html>
+            ";
+
+            if (!sendMail($email, $subject, $body)) {
+                $this->error('Ошибка при отправке кода. Попробуйте позже.');
+            }
+
+            $this->response([
+                'success' => true,
+                'message' => 'Код подтверждения отправлен на email'
+            ]);
+
+        } catch (Exception $e) {
+            $this->error($e->getMessage());
+        }
+    }
+
+    public function verifyResetCode() {
+        try {
+            // Начинаем сессию если еще не начата
+            if (session_status() === PHP_SESSION_NONE) {
+                session_start();
+            }
+
+            $email = filter_input(INPUT_POST, 'email', FILTER_VALIDATE_EMAIL);
+            $code = filter_input(INPUT_POST, 'code', FILTER_SANITIZE_STRING);
+            
+            // Для отладки
+            error_log("Verifying code. Session data: " . print_r($_SESSION['reset_code'] ?? 'no session data', true));
+            error_log("Received code: {$code}, email: {$email}");
+            
+            if (!$email || !$code) {
+                $this->error('Неверный код подтверждения');
+            }
+
+            if (!isset($_SESSION['reset_code'])) {
+                $this->error('Сессия истекла. Запросите код повторно.');
+            }
+
+            if ($_SESSION['reset_code']['email'] !== $email) {
+                $this->error('Email не совпадает с запрошенным');
+            }
+
+            if ($_SESSION['reset_code']['code'] !== $code) {
+                $this->error('Неверный код подтверждения');
+            }
+
+            if ($_SESSION['reset_code']['expires'] < time()) {
+                $this->error('Код подтверждения истек');
+            }
+
+            $this->response([
+                'success' => true,
+                'message' => 'Код подтверждения верный'
+            ]);
+
+        } catch (Exception $e) {
+            $this->error($e->getMessage());
+        }
+    }
+
+    public function resetPassword() {
+        try {
+            session_start();
+            
+            $email = filter_input(INPUT_POST, 'email', FILTER_VALIDATE_EMAIL);
+            $code = filter_input(INPUT_POST, 'code', FILTER_SANITIZE_STRING);
+            $password = $_POST['password'] ?? '';
+            
+            if (!$email || !$code || !$password) {
+                $this->error('Все поля обязательны для заполнения');
+            }
+
+            // Проверяем код из сессии
+            if (!isset($_SESSION['reset_code']) || 
+                $_SESSION['reset_code']['code'] !== $code ||
+                $_SESSION['reset_code']['email'] !== $email ||
+                $_SESSION['reset_code']['expires'] < time()) {
+                $this->error('Неверный или устаревший код подтверждения');
+            }
+
+            // Обновляем пароль
+            $stmt = $this->db->prepare('
+                UPDATE users 
+                SET password_hash = ?
+                WHERE email = ?
+            ');
+            $passwordHash = password_hash($password, PASSWORD_DEFAULT);
+            $stmt->execute([$passwordHash, $email]);
+
+            // Очищаем данные восстановления из сессии
+            unset($_SESSION['reset_code']);
+
+            $this->response([
+                'success' => true,
+                'message' => 'Пароль успешно изменен'
+            ]);
+
+        } catch (Exception $e) {
+            $this->error($e->getMessage());
+        }
+    }
+
+    // Добавим метод для повторной отправки кода
+    public function resendCode() {
+        try {
+            session_start();
+            
+            $email = filter_input(INPUT_POST, 'email', FILTER_VALIDATE_EMAIL);
+            
+            if (!$email) {
+                $this->error('Введите корректный email');
+            }
+
+            // Проверяем существование пользователя
+            $stmt = $this->db->prepare('SELECT id FROM users WHERE email = ?');
+            $stmt->execute([$email]);
+            if (!$stmt->fetch()) {
+                $this->error('Пользователь с таким email не найден');
+            }
+
+            // Генерируем новый код
+            $code = sprintf('%06d', random_int(0, 999999));
+            $_SESSION['reset_code'] = [
+                'code' => $code,
+                'email' => $email,
+                'expires' => time() + 3600
+            ];
+
+            // Отправляем новый код
+            $subject = 'Восстановление пароля MerchandiseControl';
+            $body = "
+                <html>
+                <head>
+                    <title>Восстановление пароля</title>
+                </head>
+                <body>
+                    <h2>Восстановление пароля</h2>
+                    <p>Вы запросили повторную отправку кода для восстановления пароля.</p>
+                    <p>Ваш новый код подтверждения: <b style='font-size: 18px;'>{$code}</b></p>
+                    <p>Код действителен в течение 1 часа.</p>
+                    <p>Если вы не запрашивали восстановление пароля, проигнорируйте это письмо.</p>
+                </body>
+                </html>
+            ";
+
+            if (!sendMail($email, $subject, $body)) {
+                $this->error('Ошибка при отправке кода. Попробуйте позже.');
+            }
+
+            $this->response([
+                'success' => true,
+                'message' => 'Новый код подтверждения отправлен на email'
+            ]);
+
+        } catch (Exception $e) {
+            $this->error($e->getMessage());
+        }
     }
 }
 ?> 

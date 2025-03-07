@@ -3,6 +3,11 @@
 error_reporting(0);
 ini_set('display_errors', 0);
 
+// Настройки сессии
+ini_set('session.cookie_lifetime', '3600');
+ini_set('session.gc_maxlifetime', '3600');
+session_start();
+
 require_once '../config/database.php';
 require_once 'AuthController.php';
 
@@ -25,6 +30,18 @@ try {
                     break;
                 case 'register':
                     $auth->register();
+                    break;
+                case 'forgotPassword':
+                    $auth->forgotPassword();
+                    break;
+                case 'verifyResetCode':
+                    $auth->verifyResetCode();
+                    break;
+                case 'resetPassword':
+                    $auth->resetPassword();
+                    break;
+                case 'resendCode':
+                    $auth->resendCode();
                     break;
                 default:
                     throw new Exception('Неизвестное действие');

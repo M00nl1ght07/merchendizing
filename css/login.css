@@ -160,29 +160,28 @@
 .strength-bar {
     height: 4px;
     border-radius: 2px;
-    background: var(--dark-bg);
-    margin-bottom: 0.25rem;
+    margin-top: 8px;
     transition: all 0.3s ease;
 }
 
 .strength-bar.weak {
-    width: 33.33%;
-    background: #dc3545;
+    width: 33%;
+    background-color: #FF4444;
 }
 
 .strength-bar.medium {
-    width: 66.66%;
-    background: #ffc107;
+    width: 66%;
+    background-color: #FFA500;
 }
 
 .strength-bar.strong {
     width: 100%;
-    background: #198754;
+    background-color: #4CAF50;
 }
 
 .strength-text {
-    color: var(--text-secondary);
-    font-size: 0.75rem;
+    font-size: 12px;
+    margin-top: 4px;
 }
 
 .terms-link {

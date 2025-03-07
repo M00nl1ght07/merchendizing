@@ -15,17 +15,33 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Обработка отправки формы
-    loginForm.addEventListener('submit', function(e) {
+    loginForm.addEventListener('submit', async function(e) {
         e.preventDefault();
         
         const email = document.getElementById('email').value;
-        const password = passwordInput.value;
+        const password = document.getElementById('password').value;
         const remember = document.getElementById('remember').checked;
-
-        // Здесь будет логика авторизации
-        console.log('Отправка формы:', { email, password, remember });
         
-        // Временно: просто показываем сообщение
-        alert('Функция авторизации будет добавлена позже');
+        try {
+            const response = await fetch('api/index.php?controller=auth&action=login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}&remember=${remember}`
+            });
+            
+            const data = await response.json();
+            
+            if (data.error) {
+                throw new Error(data.error);
+            }
+            
+            // Успешная авторизация
+            window.location.href = 'dashboard.html';
+            
+        } catch (error) {
+            alert(error.message || 'Ошибка авторизации');
+        }
     });
 }); 

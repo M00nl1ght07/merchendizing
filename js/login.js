@@ -1,47 +1,53 @@
 document.addEventListener('DOMContentLoaded', function() {
     const loginForm = document.getElementById('loginForm');
-    const togglePassword = document.querySelector('.toggle-password');
     const passwordInput = document.getElementById('password');
+    const togglePassword = document.querySelector('.toggle-password');
 
     // Переключение видимости пароля
     togglePassword.addEventListener('click', function() {
         const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
         passwordInput.setAttribute('type', type);
         
-        // Изменение иконки
         const icon = this.querySelector('i');
         icon.classList.toggle('fa-eye');
         icon.classList.toggle('fa-eye-slash');
     });
 
-    // Обработка отправки формы
+    // Обработка входа
     loginForm.addEventListener('submit', async function(e) {
         e.preventDefault();
-        
-        const email = document.getElementById('email').value;
-        const password = document.getElementById('password').value;
-        const remember = document.getElementById('remember').checked;
-        
+
+        const formData = {
+            email: document.getElementById('email').value.trim(),
+            password: passwordInput.value
+        };
+
         try {
             const response = await fetch('api/index.php?controller=auth&action=login', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
                 },
-                body: `email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}&remember=${remember}`
+                body: Object.entries(formData)
+                    .map(([key, value]) => `${key}=${encodeURIComponent(value)}`)
+                    .join('&')
             });
-            
+
+            if (!response.ok) {
+                throw new Error('Ошибка сети');
+            }
+
             const data = await response.json();
-            
+
             if (data.error) {
                 throw new Error(data.error);
             }
-            
-            // Успешная авторизация
+
+            // Успешный вход
             window.location.href = 'dashboard.html';
-            
+
         } catch (error) {
-            alert(error.message || 'Ошибка авторизации');
+            alert(error.message || 'Ошибка при входе');
         }
     });
 }); 

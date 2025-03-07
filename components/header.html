@@ -63,15 +63,15 @@
         </div>
         <div class="user-profile">
             <button class="profile-btn" data-bs-toggle="dropdown">
-                <img src="images/avatar.png" alt="Profile" class="avatar">
-                <span class="user-name">Иван Петров</span>
+                <img src="images/avatar.png" alt="Profile" class="avatar" id="userAvatar">
+                <span class="user-name" id="userName">Загрузка...</span>
                 <i class="fa fa-angle-down"></i>
             </button>
             <ul class="dropdown-menu dropdown-menu-end">
                 <li><a class="dropdown-item" href="profile.html"><i class="fa fa-user"></i> Профиль</a></li>
                 <li><a class="dropdown-item" href="settings.html"><i class="fa fa-cog"></i> Настройки</a></li>
                 <li><hr class="dropdown-divider"></li>
-                <li><a class="dropdown-item" href="login.html"><i class="fa fa-sign-out"></i> Выход</a></li>
+                <li><a class="dropdown-item" href="#" onclick="logout()"><i class="fa fa-sign-out"></i> Выход</a></li>
             </ul>
         </div>
     </div>

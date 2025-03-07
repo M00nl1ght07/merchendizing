@@ -11,7 +11,14 @@ class AuthController extends Api {
             $this->error('Неверный email или пароль');
         }
         
-        $stmt = $this->db->prepare('SELECT id, password_hash, name, role FROM users WHERE email = ?');
+        // Получаем полные данные пользователя
+        $stmt = $this->db->prepare('
+            SELECT u.id, u.password_hash, u.name, u.role, u.avatar_url, u.company_id, 
+                   c.name as company_name
+            FROM users u
+            LEFT JOIN companies c ON u.company_id = c.id
+            WHERE u.email = ?
+        ');
         $stmt->execute([$email]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
         
@@ -19,16 +26,15 @@ class AuthController extends Api {
             $this->error('Неверный email или пароль');
         }
         
+        // Удаляем хеш пароля из данных сессии
+        unset($user['password_hash']);
+        
         session_start();
-        $_SESSION['user'] = [
-            'id' => $user['id'],
-            'name' => $user['name'],
-            'role' => $user['role']
-        ];
+        $_SESSION['user'] = $user;
         
         $this->response([
             'success' => true,
-            'user' => $_SESSION['user']
+            'user' => $user
         ]);
     }
 
@@ -378,6 +384,118 @@ class AuthController extends Api {
                 'success' => true,
                 'message' => 'Новый код подтверждения отправлен на email'
             ]);
+
+        } catch (Exception $e) {
+            $this->error($e->getMessage());
+        }
+    }
+
+    public function checkAuth() {
+        session_start();
+        if (!isset($_SESSION['user'])) {
+            $this->error('Не авторизован');
+        }
+
+        // Получаем актуальные данные пользователя из БД
+        $stmt = $this->db->prepare('
+            SELECT u.id, u.name, u.email, u.role, u.avatar_url, u.company_id, c.name as company_name
+            FROM users u
+            LEFT JOIN companies c ON u.company_id = c.id
+            WHERE u.id = ?
+        ');
+        $stmt->execute([$_SESSION['user']['id']]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$user) {
+            unset($_SESSION['user']);
+            $this->error('Пользователь не найден');
+        }
+
+        $_SESSION['user'] = $user;
+        $this->response([
+            'success' => true,
+            'user' => $user
+        ]);
+    }
+
+    public function logout() {
+        session_start();
+        session_destroy();
+        $this->response(['success' => true]);
+    }
+
+    public function getNotifications() {
+        try {
+            session_start();
+            if (!isset($_SESSION['user'])) {
+                $this->error('Не авторизован');
+            }
+
+            // Получаем последние уведомления для пользователя
+            $stmt = $this->db->prepare('
+                SELECT 
+                    id,
+                    title,
+                    message,
+                    type,
+                    is_read,
+                    created_at
+                FROM notifications 
+                WHERE company_id = ? 
+                ORDER BY created_at DESC 
+                LIMIT 10
+            ');
+            $stmt->execute([$_SESSION['user']['company_id']]);
+            $notifications = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            // Получаем количество непрочитанных
+            $stmt = $this->db->prepare('
+                SELECT COUNT(*) as unread_count 
+                FROM notifications 
+                WHERE company_id = ? AND is_read = false
+            ');
+            $stmt->execute([$_SESSION['user']['company_id']]);
+            $unreadCount = $stmt->fetch(PDO::FETCH_ASSOC)['unread_count'];
+
+            $this->response([
+                'success' => true,
+                'notifications' => $notifications,
+                'unread_count' => $unreadCount
+            ]);
+
+        } catch (Exception $e) {
+            $this->error($e->getMessage());
+        }
+    }
+
+    public function markNotificationRead() {
+        try {
+            session_start();
+            if (!isset($_SESSION['user'])) {
+                $this->error('Не авторизован');
+            }
+
+            $notificationId = filter_input(INPUT_POST, 'notification_id', FILTER_VALIDATE_INT);
+            
+            if ($notificationId) {
+                // Отмечаем одно уведомление
+                $stmt = $this->db->prepare('
+                    UPDATE notifications 
+                    SET is_read = true 
+                    WHERE id = ? AND company_id = ?
+                ');
+                $stmt->execute([$notificationId, $_SESSION['user']['company_id']]);
+            } else {
+                // Отмечаем все уведомления
+                $stmt = $this->db->prepare('
+                    UPDATE notifications 
+                    SET is_read = true 
+                    WHERE company_id = ? AND is_read = false
+                ');
+                $stmt->execute([$_SESSION['user']['company_id']]);
+            }
+
+            $this->response(['success' => true]);
 
         } catch (Exception $e) {
             $this->error($e->getMessage());

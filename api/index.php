@@ -10,6 +10,7 @@ session_start();
 
 require_once '../config/database.php';
 require_once 'AuthController.php';
+require_once 'DashboardController.php';
 
 // Устанавливаем заголовки
 header('Access-Control-Allow-Origin: *');
@@ -43,11 +44,35 @@ try {
                 case 'resendCode':
                     $auth->resendCode();
                     break;
+                case 'checkAuth':
+                    $auth->checkAuth();
+                    break;
+                case 'logout':
+                    $auth->logout();
+                    break;
+                case 'getNotifications':
+                    $auth->getNotifications();
+                    break;
+                case 'markNotificationRead':
+                    $auth->markNotificationRead();
+                    break;
                 default:
                     throw new Exception('Неизвестное действие');
             }
             break;
-            
+        case 'dashboard':
+            $dashboard = new DashboardController($db);
+            switch ($action) {
+                case 'getStats':
+                    $dashboard->getStats();
+                    break;
+                case 'getTopMerchandisers':
+                    $dashboard->getTopMerchandisers();
+                    break;
+                default:
+                    throw new Exception('Неизвестное действие');
+            }
+            break;
         default:
             throw new Exception('Неизвестный контроллер');
     }

@@ -1,7 +1,11 @@
 // Глобальные переменные для графиков
 let activityChart, tasksChart, efficiencyChart;
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
+    // Проверяем авторизацию
+    const user = await checkAuth();
+    if (!user) return;
+
     console.log('Страница загружена, начинаем инициализацию...');
 
     // Инициализация меню
@@ -22,45 +26,52 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Инициализация графиков
-    initCharts();
+    // Загрузка статистики
+    loadDashboardStats();
+    loadTopMerchandisers();
+
+    // Обработчики для переключения периодов графиков
+    document.querySelectorAll('[data-period]').forEach(button => {
+        button.addEventListener('click', function() {
+            document.querySelectorAll('[data-period]').forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+            updateActivityChart(this.dataset.period);
+        });
+    });
 });
 
-// Функция инициализации графиков
-function initCharts() {
+function initCharts(data) {
     console.log('Инициализация графиков...');
-    const activityCtx = document.getElementById('activityChart');
+
+    // Уничтожаем существующие графики перед созданием новых
+    if (activityChart) activityChart.destroy();
+    if (tasksChart) tasksChart.destroy();
+    if (efficiencyChart) efficiencyChart.destroy();
+
+    const ctx = document.getElementById('activityChart');
     const tasksCtx = document.getElementById('tasksChart');
     const efficiencyCtx = document.getElementById('efficiencyChart');
 
-    console.log('Найдены элементы:', {activityCtx, tasksCtx, efficiencyCtx});
-    
-    if (!activityCtx || !tasksCtx || !efficiencyCtx) {
+    if (!ctx || !tasksCtx || !efficiencyCtx) {
         console.error('Не найдены элементы canvas для графиков');
         return;
     }
 
     // Инициализация графика активности
-    activityChart = new Chart(activityCtx, {
+    activityChart = new Chart(ctx, {
         type: 'line',
         data: {
-            labels: ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'],
+            labels: data.activity.map(item => item.date),
             datasets: [{
-                data: [12, 19, 15, 17, 14, 8, 5],
-                borderColor: '#7C4DFF',
-                backgroundColor: 'rgba(124, 77, 255, 0.1)',
-                fill: true,
+                label: 'Активность',
+                data: data.activity.map(item => item.visits),
+                borderColor: '#7c4dff',
                 tension: 0.4
             }]
         },
         options: {
             responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    display: false
-                }
-            }
+            maintainAspectRatio: false
         }
     });
 
@@ -70,7 +81,11 @@ function initCharts() {
         data: {
             labels: ['Выполнено', 'В процессе', 'Не начато'],
             datasets: [{
-                data: [65, 25, 10],
+                data: [
+                    data.tasks.completed || 0,
+                    data.tasks.in_progress || 0,
+                    data.tasks.not_started || 0
+                ],
                 backgroundColor: ['#4CAF50', '#FFC107', '#F44336']
             }]
         },
@@ -84,20 +99,16 @@ function initCharts() {
     efficiencyChart = new Chart(efficiencyCtx, {
         type: 'bar',
         data: {
-            labels: ['Пн', 'Вт', 'Ср', 'Чт', 'Пт'],
+            labels: data.efficiency.map(item => item.name),
             datasets: [{
-                data: [85, 92, 88, 95, 91],
-                backgroundColor: '#2196F3'
+                label: 'Эффективность',
+                data: data.efficiency.map(item => item.avg_efficiency),
+                backgroundColor: '#7c4dff'
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    display: false
-                }
-            },
             scales: {
                 y: {
                     beginAtZero: true,
@@ -108,16 +119,6 @@ function initCharts() {
     });
 
     console.log('Графики инициализированы:', { activityChart, tasksChart, efficiencyChart });
-
-    // Обработчики периодов для графика активности
-    const periodButtons = document.querySelectorAll('[data-period]');
-    periodButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            periodButtons.forEach(btn => btn.classList.remove('active'));
-            this.classList.add('active');
-            updateActivityChart(this.dataset.period);
-        });
-    });
 }
 
 // Функция обновления данных графика активности
@@ -138,5 +139,78 @@ function updateActivityChart(period) {
         activityChart.data.labels = labels[period];
         activityChart.data.datasets[0].data = data[period];
         activityChart.update();
+    }
+}
+
+async function loadDashboardStats() {
+    try {
+        const response = await fetch('api/index.php?controller=dashboard&action=getStats');
+        const data = await response.json();
+
+        if (data.error) {
+            throw new Error(data.error);
+        }
+
+        // Обновляем статистику на странице
+        updateStats(data.stats);
+        
+        // Инициализируем графики с реальными данными
+        initCharts(data.charts);
+
+    } catch (error) {
+        console.error('Ошибка при загрузке статистики:', error);
+        alert('Ошибка при загрузке данных дашборда');
+    }
+}
+
+function updateStats(stats) {
+    // Обновляем карточки со статистикой
+    document.querySelector('[data-stat="active-merchandisers"] h3').textContent = stats.merchandisers.active;
+    document.querySelector('[data-stat="visits-today"] h3').textContent = stats.visits.today;
+    document.querySelector('[data-stat="tasks-completed"] h3').textContent = stats.tasks.completed + '%';
+    document.querySelector('[data-stat="new-reports"] h3').textContent = stats.reports.new;
+
+    // Обновляем тренды
+    updateTrend('[data-stat="active-merchandisers"]', stats.merchandisers.trend);
+    updateTrend('[data-stat="visits-today"]', stats.visits.trend);
+    updateTrend('[data-stat="tasks-completed"]', stats.tasks.trend);
+    updateTrend('[data-stat="new-reports"]', stats.reports.trend);
+}
+
+function updateTrend(selector, value) {
+    const element = document.querySelector(`${selector} .trend`);
+    element.className = `trend ${value >= 0 ? 'up' : 'down'}`;
+    element.innerHTML = `
+        <i class="fa fa-arrow-${value >= 0 ? 'up' : 'down'}"></i>
+        ${Math.abs(value)}%
+    `;
+}
+
+async function loadTopMerchandisers() {
+    try {
+        const response = await fetch('api/index.php?controller=dashboard&action=getTopMerchandisers');
+        const data = await response.json();
+
+        if (data.error) {
+            throw new Error(data.error);
+        }
+
+        // Обновляем список топ мерчендайзеров
+        const list = document.querySelector('.merchandiser-list');
+        list.innerHTML = data.merchandisers.map(m => `
+            <li class="merchandiser-item">
+                <img src="${m.avatar_url || 'images/avatar.png'}" alt="Avatar" class="avatar">
+                <div class="merchandiser-info">
+                    <h6>${m.name}</h6>
+                    <p>${m.visit_count} посещений</p>
+                </div>
+                <span class="badge bg-${m.completion_rate >= 90 ? 'success' : 
+                                      m.completion_rate >= 70 ? 'warning' : 
+                                      'danger'}">${m.completion_rate}%</span>
+            </li>
+        `).join('');
+
+    } catch (error) {
+        console.error('Ошибка при загрузке топ мерчендайзеров:', error);
     }
 } 

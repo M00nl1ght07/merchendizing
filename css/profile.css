@@ -5,11 +5,16 @@
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
+.profile-header {
+    text-align: center;
+    padding: 20px;
+}
+
 .profile-image-wrapper {
     position: relative;
     width: 120px;
     height: 120px;
-    margin: 0 auto 1.5rem;
+    margin: 0 auto 15px;
 }
 
 .profile-image {
@@ -17,7 +22,17 @@
     height: 100%;
     border-radius: 50%;
     object-fit: cover;
-    border: 3px solid var(--primary-color);
+}
+
+#profileName {
+    margin: 10px 0 5px;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+#profileRole {
+    color: #6c757d;
+    margin-bottom: 20px;
 }
 
 .change-photo-btn {
@@ -107,6 +122,34 @@
     color: var(--text-secondary);
     margin-bottom: 0.5rem;
     display: block;
+}
+
+/* Стили для полей ввода */
+.form-control {
+    background-color: var(--bg-secondary);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    width: 100%;
+    transition: border-color 0.3s ease;
+}
+
+.form-control:focus {
+    border-color: var(--primary-color);
+    box-shadow: none;
+    outline: none;
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+.form-control:disabled {
+    background-color: rgba(255, 255, 255, 0.05);
+    cursor: not-allowed;
+}
+
+.form-control::placeholder {
+    color: var(--text-secondary);
 }
 
 /* Адаптивность */

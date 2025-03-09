@@ -18,6 +18,7 @@ CREATE TABLE users (
     name VARCHAR(255) NOT NULL,
     avatar_url TEXT, -- добавлено для фото профиля
     role VARCHAR(50) DEFAULT 'admin',
+    phone VARCHAR(20),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

@@ -11,7 +11,7 @@ async function checkAuth() {
 
         return data.user;
     } catch (error) {
-        console.error('Ошибка при проверке авторизации:', error);
+        console.error('Ошибка проверки авторизации:', error);
         window.location.href = 'login.html';
         return null;
     }

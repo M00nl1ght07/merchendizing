@@ -11,6 +11,7 @@ session_start();
 require_once '../config/database.php';
 require_once 'AuthController.php';
 require_once 'DashboardController.php';
+require_once 'ProfileController.php';
 
 // Устанавливаем заголовки
 header('Access-Control-Allow-Origin: *');
@@ -68,6 +69,25 @@ try {
                     break;
                 case 'getTopMerchandisers':
                     $dashboard->getTopMerchandisers();
+                    break;
+                default:
+                    throw new Exception('Неизвестное действие');
+            }
+            break;
+        case 'profile':
+            $profile = new ProfileController($db);
+            switch ($action) {
+                case 'getProfile':
+                    $profile->getProfile();
+                    break;
+                case 'updateProfile':
+                    $profile->updateProfile();
+                    break;
+                case 'updatePassword':
+                    $profile->updatePassword();
+                    break;
+                case 'updateAvatar':
+                    $profile->updateAvatar();
                     break;
                 default:
                     throw new Exception('Неизвестное действие');

@@ -91,14 +91,14 @@ class AuthController extends Api {
             $stmt->execute([$company, $inn, $phone, 'Адрес не указан']);
             $companyId = $this->db->lastInsertId();
 
-            // Создаем пользователя
+            // Создаем пользователя с телефоном
             $stmt = $this->db->prepare('
-                INSERT INTO users (company_id, email, password_hash, name, role) 
-                VALUES (?, ?, ?, ?, ?)
+                INSERT INTO users (company_id, email, password_hash, name, phone, role) 
+                VALUES (?, ?, ?, ?, ?, "admin")
             ');
             $passwordHash = password_hash($password, PASSWORD_DEFAULT);
             $fullName = $firstName . ' ' . $lastName;
-            $stmt->execute([$companyId, $email, $passwordHash, $fullName, 'admin']);
+            $stmt->execute([$companyId, $email, $passwordHash, $fullName, $phone]);
 
             $this->db->commit();
 

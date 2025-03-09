@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         // Проверяем авторизацию и получаем данные пользователя
         const user = await checkAuth();
         if (user) {
-            // Обновляем информацию пользователя
+            // Обновляем информацию пользователя в шапке
             document.getElementById('userName').textContent = user.name;
             if (user.avatar_url) {
                 document.getElementById('userAvatar').src = user.avatar_url;

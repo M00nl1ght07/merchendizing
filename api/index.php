@@ -12,6 +12,7 @@ require_once '../config/database.php';
 require_once 'AuthController.php';
 require_once 'DashboardController.php';
 require_once 'ProfileController.php';
+require_once 'SettingsController.php';
 
 // Устанавливаем заголовки
 header('Access-Control-Allow-Origin: *');
@@ -88,6 +89,19 @@ try {
                     break;
                 case 'updateAvatar':
                     $profile->updateAvatar();
+                    break;
+                default:
+                    throw new Exception('Неизвестное действие');
+            }
+            break;
+        case 'settings':
+            $settings = new SettingsController($db);
+            switch ($action) {
+                case 'getCompanySettings':
+                    $settings->getCompanySettings();
+                    break;
+                case 'updateCompany':
+                    $settings->updateCompany();
                     break;
                 default:
                     throw new Exception('Неизвестное действие');

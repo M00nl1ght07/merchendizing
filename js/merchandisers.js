@@ -1,76 +1,204 @@
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
+    // Проверяем авторизацию
+    const user = await checkAuth();
+    if (!user) return;
+
     const searchInput = document.querySelector('input[placeholder="Поиск по имени..."]');
     const statusFilter = document.querySelector('select[class="form-select"]');
     const regionFilter = document.querySelectorAll('select[class="form-select"]')[1];
     const addForm = document.getElementById('addMerchandiserForm');
 
-    // Фильтрация мерчандайзеров
-    function filterMerchandisers() {
-        const searchText = searchInput.value.toLowerCase();
-        const selectedStatus = statusFilter.value.toLowerCase();
-        const selectedRegion = regionFilter.value.toLowerCase();
+    // Загружаем мерчандайзеров при загрузке страницы
+    loadMerchandisers();
 
-        const cards = document.querySelectorAll('.merchandiser-card');
-
-        cards.forEach(card => {
-            const name = card.querySelector('h5').textContent.toLowerCase();
-            const status = card.querySelector('.badge').textContent.toLowerCase();
-            const region = card.querySelector('.region span').textContent.toLowerCase();
-
-            let visible = true;
-
-            if (searchText && !name.includes(searchText)) visible = false;
-            if (selectedStatus && status !== selectedStatus) visible = false;
-            if (selectedRegion && region !== selectedRegion) visible = false;
-
-            card.closest('.col-md-6').style.display = visible ? '' : 'none';
+    // Добавляем маску для телефона
+    const phoneInput = document.querySelector('input[name="phone"]');
+    if (phoneInput) {
+        IMask(phoneInput, {
+            mask: '+{7}(000)000-00-00'
         });
     }
 
-    // Обработчики событий для фильтров
-    searchInput.addEventListener('input', debounce(filterMerchandisers, 300));
-    statusFilter.addEventListener('change', filterMerchandisers);
-    regionFilter.addEventListener('change', filterMerchandisers);
-
-    // Обработка формы добавления мерчандайзера
-    addForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        const formData = new FormData(this);
-        
-        // Здесь будет отправка на сервер
-        console.log('Добавление мерчандайзера:', Object.fromEntries(formData));
-        
-        // Закрываем модальное окно
-        const modal = bootstrap.Modal.getInstance(document.getElementById('addMerchandiserModal'));
-        modal.hide();
-        
-        // Очищаем форму
-        this.reset();
-        
-        // Показываем уведомление
-        showNotification('Мерчандайзер успешно добавлен');
-    });
-
-    // Обработка действий с мерчандайзерами
-    document.querySelectorAll('.dropdown-item').forEach(item => {
-        item.addEventListener('click', function(e) {
-            e.preventDefault();
-            const action = this.textContent.trim();
-            const card = this.closest('.merchandiser-card');
-            const name = card.querySelector('h5').textContent;
-
-            switch(action) {
-                case 'Редактировать':
-                    editMerchandiser(name);
-                    break;
-                case 'Удалить':
-                    deleteMerchandiser(name, card);
-                    break;
+    // Валидация пароля
+    const passwordInput = document.querySelector('input[name="password"]');
+    if (passwordInput) {
+        passwordInput.addEventListener('input', function() {
+            if (this.value.length < 6) {
+                this.setCustomValidity('Пароль должен содержать минимум 6 символов');
+            } else {
+                this.setCustomValidity('');
             }
         });
-    });
+    }
+
+    // Обработка добавления мерчандайзера
+    if (addForm) {
+        addForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const password = this.querySelector('[name="password"]').value;
+            const phone = this.querySelector('[name="phone"]').value;
+
+            if (password.length < 6) {
+                showNotification('Пароль должен содержать минимум 6 символов', 'error');
+                return;
+            }
+
+            if (!phone.match(/^\+7\(\d{3}\)\d{3}-\d{2}-\d{2}$/)) {
+                showNotification('Неверный формат телефона', 'error');
+                return;
+            }
+
+            try {
+                const formData = new FormData(this);
+                
+                const response = await fetch('api/index.php?controller=merchandisers&action=addMerchandiser', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+                
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                // Закрываем модальное окно
+                const modal = bootstrap.Modal.getInstance(document.getElementById('addMerchandiserModal'));
+                modal.hide();
+                
+                // Очищаем форму
+                this.reset();
+                
+                // Показываем уведомление
+                showNotification('Мерчандайзер успешно добавлен');
+                
+                // Перезагружаем список
+                loadMerchandisers();
+
+            } catch (error) {
+                console.error('Ошибка при добавлении мерчандайзера:', error);
+                showNotification(error.message, 'error');
+            }
+        });
+    }
+
+    // Поиск и фильтрация
+    searchInput.addEventListener('input', debounce(loadMerchandisers, 300));
+    statusFilter.addEventListener('change', loadMerchandisers);
+    regionFilter.addEventListener('change', loadMerchandisers);
+
+    // Обработчик кнопки показа пароля
+    const togglePasswordBtn = document.querySelector('.toggle-password');
+    if (togglePasswordBtn) {
+        togglePasswordBtn.addEventListener('click', function() {
+            const passwordInput = this.previousElementSibling;
+            const type = passwordInput.type === 'password' ? 'text' : 'password';
+            passwordInput.type = type;
+            this.querySelector('i').classList.toggle('fa-eye');
+            this.querySelector('i').classList.toggle('fa-eye-slash');
+        });
+    }
 });
+
+async function loadMerchandisers() {
+    try {
+        const searchText = document.querySelector('input[placeholder="Поиск по имени..."]').value;
+        const status = document.querySelector('select[class="form-select"]').value;
+        const region = document.querySelectorAll('select[class="form-select"]')[1].value;
+
+        const params = new URLSearchParams({
+            search: searchText,
+            status: status,
+            region: region
+        });
+
+        console.log('Загружаем мерчандайзеров с параметрами:', Object.fromEntries(params));
+
+        const response = await fetch(`api/index.php?controller=merchandisers&action=getMerchandisers&${params}`);
+        const data = await response.json();
+
+        console.log('Получены данные:', data);
+
+        if (data.error) {
+            throw new Error(data.error);
+        }
+
+        const container = document.querySelector('.merchandisers-grid');
+        if (!container) {
+            throw new Error('Не найден контейнер для мерчандайзеров');
+        }
+
+        container.innerHTML = data.merchandisers.map(m => `
+            <div class="col-md-6 col-xl-4 mb-4">
+                <div class="merchandiser-card">
+                    <div class="merchandiser-header">
+                        <div class="d-flex align-items-center">
+                            <img src="${m.avatar_url || 'images/avatar.png'}" alt="Avatar" class="merchandiser-avatar">
+                            <div class="ms-3">
+                                <h5 class="mb-0">${m.name}</h5>
+                                <span class="badge bg-${getStatusColor(m.status)}">${m.status}</span>
+                            </div>
+                        </div>
+                        <div class="dropdown">
+                            <button class="btn btn-icon" data-bs-toggle="dropdown">
+                                <i class="fa fa-ellipsis-v"></i>
+                            </button>
+                            <div class="dropdown-menu dropdown-menu-end">
+                                <button class="dropdown-item" onclick="editMerchandiser(${m.id})">
+                                    <i class="fa fa-pencil"></i> Редактировать
+                                </button>
+                                <div class="dropdown-divider"></div>
+                                <button class="dropdown-item text-danger" onclick="deleteMerchandiser(${m.id}, '${m.name}')">
+                                    <i class="fa fa-trash"></i> Удалить
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="merchandiser-stats">
+                        <div class="stat-item">
+                            <span class="stat-label">Посещений</span>
+                            <span class="stat-value">${m.visits_count || 0}</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Эффективность</span>
+                            <span class="stat-value">${Math.round(m.efficiency || 0)}%</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Отчетов</span>
+                            <span class="stat-value">${m.reports_count || 0}</span>
+                        </div>
+                    </div>
+                    <div class="merchandiser-footer">
+                        <div class="region">
+                            <i class="fa fa-map-marker"></i>
+                            <span>${m.region}</span>
+                        </div>
+                        <button class="btn btn-outline-primary btn-sm" onclick="window.location.href='mailto:${m.email}'">
+                            <i class="fa fa-envelope"></i>
+                            Написать
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+
+    } catch (error) {
+        console.error('Ошибка при загрузке мерчандайзеров:', error);
+        showNotification(error.message, 'error');
+    }
+}
+
+function getStatusColor(status) {
+    const colors = {
+        'active': 'success',
+        'inactive': 'danger',
+        'pending': 'warning'
+    };
+    return colors[status] || 'secondary';
+}
+
+// Остальные вспомогательные функции...
 
 // Вспомогательные функции
 function debounce(func, wait) {
@@ -85,9 +213,9 @@ function debounce(func, wait) {
     };
 }
 
-function showNotification(message) {
+function showNotification(message, type = 'success') {
     const notification = document.createElement('div');
-    notification.className = 'notification';
+    notification.className = `notification ${type}`;
     notification.textContent = message;
     document.body.appendChild(notification);
     setTimeout(() => notification.remove(), 3000);
@@ -127,10 +255,11 @@ document.getElementById('editMerchandiserForm')?.addEventListener('submit', func
     showNotification('Данные мерчандайзера обновлены');
 });
 
-function deleteMerchandiser(name, card) {
+function deleteMerchandiser(id, name) {
     if (confirm(`Вы уверены, что хотите удалить мерчандайзера "${name}"?`)) {
         // Здесь будет запрос на удаление
-        console.log('Удаление:', name);
+        console.log('Удаление:', id);
+        const card = document.querySelector(`.merchandiser-card:has(h5:contains("${name}"))`);
         card.closest('.col-md-6').remove();
         showNotification('Мерчандайзер успешно удален');
     }

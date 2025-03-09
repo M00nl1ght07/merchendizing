@@ -6,65 +6,21 @@
         <div class="notifications">
             <button class="notification-btn" data-bs-toggle="dropdown">
                 <i class="fa fa-bell"></i>
-                <span class="badge">3</span>
+                <span class="badge" id="notifications-count">0</span>
             </button>
-            <div class="dropdown-menu notifications-dropdown dropdown-menu-end">
+            <div class="dropdown-menu notifications-menu">
                 <div class="notifications-header">
                     <h6>Уведомления</h6>
-                    <button class="btn btn-link mark-all-read">
-                        Прочитать все
-                    </button>
                 </div>
-                <div class="notifications-body">
-                    <div class="notification-item unread">
-                        <div class="notification-icon report">
-                            <i class="fa fa-file-text"></i>
-                        </div>
-                        <div class="notification-content">
-                            <div class="notification-text">
-                                <strong>Новый отчет</strong> от Анны Смирновой
-                            </div>
-                            <div class="notification-time">5 минут назад</div>
-                        </div>
-                        <button class="btn btn-link mark-read">
-                            <i class="fa fa-check"></i>
-                        </button>
-                    </div>
-                    <div class="notification-item unread">
-                        <div class="notification-icon task">
-                            <i class="fa fa-tasks"></i>
-                        </div>
-                        <div class="notification-content">
-                            <div class="notification-text">
-                                <strong>Срочная задача:</strong> Проверить выкладку в ТЦ "Центральный"
-                            </div>
-                            <div class="notification-time">1 час назад</div>
-                        </div>
-                        <button class="btn btn-link mark-read">
-                            <i class="fa fa-check"></i>
-                        </button>
-                    </div>
-                    <div class="notification-item">
-                        <div class="notification-icon system">
-                            <i class="fa fa-info-circle"></i>
-                        </div>
-                        <div class="notification-content">
-                            <div class="notification-text">
-                                Система обновлена до версии 2.1.0
-                            </div>
-                            <div class="notification-time">2 часа назад</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="notifications-footer">
-                    <a href="#" class="view-all">Показать все уведомления</a>
+                <div class="notifications-body" id="notifications-list">
+                    <!-- Уведомления будут добавлены через JavaScript -->
                 </div>
             </div>
         </div>
         <div class="user-profile">
             <button class="profile-btn" data-bs-toggle="dropdown">
-                <img src="images/avatar.png" alt="Profile" class="avatar" id="userAvatar">
-                <span class="user-name" id="userName">Загрузка...</span>
+                <img src="images/avatar.png" alt="Profile" class="avatar" id="user-avatar">
+                <span class="user-name" id="user-name">Загрузка...</span>
                 <i class="fa fa-angle-down"></i>
             </button>
             <ul class="dropdown-menu dropdown-menu-end">

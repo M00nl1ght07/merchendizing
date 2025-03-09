@@ -29,9 +29,10 @@ CREATE TABLE merchandisers (
     name VARCHAR(255) NOT NULL,
     email VARCHAR(255) NOT NULL UNIQUE,
     phone VARCHAR(20) NOT NULL,
-    avatar_url TEXT, -- добавлено для фото профиля
+    avatar_url TEXT,
     region VARCHAR(100) NOT NULL,
     status VARCHAR(50) DEFAULT 'active',
+    password_hash VARCHAR(255) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

@@ -1,119 +1,170 @@
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
+    // Проверяем авторизацию
+    const user = await checkAuth();
+    if (!user) return;
+
     const uploadForm = document.getElementById('uploadReportForm');
     const searchInput = document.querySelector('input[placeholder="Поиск по названию..."]');
-    const typeFilter = document.querySelector('select[class="form-select"]');
     const statusFilter = document.querySelectorAll('select[class="form-select"]')[1];
     const dateInputs = document.querySelectorAll('input[type="date"]');
 
+    // Загружаем отчеты при загрузке страницы
+    loadReports();
+
     // Обработка загрузки отчета
-    uploadForm.addEventListener('submit', function(e) {
+    uploadForm.addEventListener('submit', async function(e) {
         e.preventDefault();
         
         const formData = new FormData(this);
         
-        // Здесь будет отправка на сервер
-        console.log('Загрузка отчета:', Object.fromEntries(formData));
-        
-        // Временно: просто закрываем модальное окно
-        const modal = bootstrap.Modal.getInstance(document.getElementById('uploadReportModal'));
-        modal.hide();
-        
-        // Очищаем форму
-        this.reset();
-        
-        // Показываем уведомление
-        showNotification('Отчет успешно загружен');
-    });
+        try {
+            const response = await fetch('api/index.php?controller=reports&action=uploadReport', {
+                method: 'POST',
+                body: formData
+            });
 
-    // Поиск по названию
-    searchInput.addEventListener('input', debounce(function() {
-        filterReports();
-    }, 300));
-
-    // Фильтрация по типу и статусу
-    typeFilter.addEventListener('change', filterReports);
-    statusFilter.addEventListener('change', filterReports);
-
-    // Фильтрация по дате
-    dateInputs.forEach(input => {
-        input.addEventListener('change', filterReports);
-    });
-
-    // Обработка действий с отчетами
-    document.querySelectorAll('.actions .btn-icon').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const action = this.getAttribute('title');
-            const reportRow = this.closest('tr');
-            const reportName = reportRow.querySelector('.report-name span').textContent;
-
-            switch(action) {
-                case 'Просмотреть':
-                    viewReport(reportName);
-                    break;
-                case 'Скачать':
-                    downloadReport(reportName);
-                    break;
-                case 'Удалить':
-                    deleteReport(reportName, reportRow);
-                    break;
+            const data = await response.json();
+            
+            if (data.error) {
+                throw new Error(data.error);
             }
-        });
+
+            // Закрываем модальное окно
+            const modal = bootstrap.Modal.getInstance(document.getElementById('uploadReportModal'));
+            modal.hide();
+            
+            // Очищаем форму
+            this.reset();
+            
+            // Показываем уведомление
+            showNotification('Отчет успешно загружен');
+            
+            // Перезагружаем список отчетов
+            loadReports();
+
+        } catch (error) {
+            showNotification(error.message, 'error');
+        }
+    });
+
+    // Поиск и фильтрация
+    searchInput.addEventListener('input', debounce(loadReports, 300));
+    statusFilter.addEventListener('change', loadReports);
+    dateInputs.forEach(input => {
+        input.addEventListener('change', loadReports);
     });
 });
 
-// Функция фильтрации отчетов
-function filterReports() {
-    const searchText = document.querySelector('input[placeholder="Поиск по названию..."]').value.toLowerCase();
-    const selectedType = document.querySelector('select[class="form-select"]').value;
-    const selectedStatus = document.querySelectorAll('select[class="form-select"]')[1].value;
-    const startDate = document.querySelectorAll('input[type="date"]')[0].value;
-    const endDate = document.querySelectorAll('input[type="date"]')[1].value;
+async function loadReports() {
+    try {
+        const searchText = document.querySelector('input[placeholder="Поиск по названию..."]').value;
+        const status = document.querySelectorAll('select[class="form-select"]')[1].value;
+        const startDate = document.querySelectorAll('input[type="date"]')[0].value;
+        const endDate = document.querySelectorAll('input[type="date"]')[1].value;
 
-    const rows = document.querySelectorAll('.table-reports tbody tr');
+        const params = new URLSearchParams({
+            search: searchText,
+            status: status,
+            startDate: startDate,
+            endDate: endDate
+        });
 
-    rows.forEach(row => {
-        const name = row.querySelector('.report-name span').textContent.toLowerCase();
-        const type = row.querySelector('td:nth-child(2)').textContent;
-        const status = row.querySelector('.badge').textContent;
-        const date = row.querySelector('td:nth-child(4)').textContent;
+        const response = await fetch(`api/index.php?controller=reports&action=getReports&${params}`);
+        const data = await response.json();
 
-        let visible = true;
+        if (data.error) {
+            throw new Error(data.error);
+        }
 
-        if (searchText && !name.includes(searchText)) visible = false;
-        if (selectedType && type !== selectedType) visible = false;
-        if (selectedStatus && status !== selectedStatus) visible = false;
-        if (startDate && new Date(date) < new Date(startDate)) visible = false;
-        if (endDate && new Date(date) > new Date(endDate)) visible = false;
+        // Обновляем таблицу
+        const tbody = document.querySelector('.table-reports tbody');
+        tbody.innerHTML = data.reports.map(report => `
+            <tr data-id="${report.id}">
+                <td>
+                    <div class="report-name">
+                        <i class="fa fa-file-excel-o"></i>
+                        <span>${report.name}</span>
+                    </div>
+                </td>
+                <td>${report.type}</td>
+                <td>${report.author}</td>
+                <td>${new Date(report.created_at).toLocaleDateString()}</td>
+                <td><span class="badge bg-${getStatusColor(report.status)}">${report.status}</span></td>
+                <td>
+                    <div class="actions">
+                        <button class="btn btn-icon" onclick="viewReport('${report.file_path}')" title="Просмотреть">
+                            <i class="fa fa-eye"></i>
+                        </button>
+                        <button class="btn btn-icon" onclick="downloadReport('${report.file_path}')" title="Скачать">
+                            <i class="fa fa-download"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
 
-        row.style.display = visible ? '' : 'none';
-    });
+    } catch (error) {
+        showNotification(error.message, 'error');
+    }
 }
 
-// Функции для работы с отчетами
-function viewReport(reportName) {
-    // Здесь будет логика просмотра отчета
-    console.log('Просмотр отчета:', reportName);
+function getStatusColor(status) {
+    const colors = {
+        'new': 'primary',
+        'in_progress': 'warning',
+        'completed': 'success',
+        'rejected': 'danger'
+    };
+    return colors[status] || 'secondary';
 }
 
-function downloadReport(reportName) {
-    // Здесь будет логика скачивания отчета
-    console.log('Скачивание отчета:', reportName);
+async function viewReport(filePath) {
+    // Открываем файл в новом окне
+    window.open(filePath, '_blank');
 }
 
-function deleteReport(reportName, row) {
-    if (confirm(`Вы уверены, что хотите удалить отчет "${reportName}"?`)) {
-        // Здесь будет запрос на удаление
-        console.log('Удаление отчета:', reportName);
-        row.remove();
+function downloadReport(filePath) {
+    const link = document.createElement('a');
+    link.href = filePath;
+    link.download = '';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+async function deleteReport(reportId) {
+    if (!confirm('Вы уверены, что хотите удалить этот отчет?')) {
+        return;
+    }
+
+    try {
+        const formData = new FormData();
+        formData.append('report_id', reportId);
+
+        const response = await fetch('api/index.php?controller=reports&action=deleteReport', {
+            method: 'POST',
+            body: formData
+        });
+
+        const data = await response.json();
+
+        if (data.error) {
+            throw new Error(data.error);
+        }
+
         showNotification('Отчет успешно удален');
+        loadReports();
+
+    } catch (error) {
+        showNotification(error.message, 'error');
     }
 }
 
 // Вспомогательные функции
-function showNotification(message) {
+function showNotification(message, type = 'success') {
     // Создаем элемент уведомления
     const notification = document.createElement('div');
-    notification.className = 'notification';
+    notification.className = `notification ${type}`;
     notification.textContent = message;
     
     // Добавляем на страницу

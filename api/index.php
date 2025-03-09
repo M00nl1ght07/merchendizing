@@ -13,6 +13,8 @@ require_once 'AuthController.php';
 require_once 'DashboardController.php';
 require_once 'ProfileController.php';
 require_once 'SettingsController.php';
+require_once 'ReportsController.php';
+require_once 'MerchandisersController.php';
 
 // Устанавливаем заголовки
 header('Access-Control-Allow-Origin: *');
@@ -102,6 +104,35 @@ try {
                     break;
                 case 'updateCompany':
                     $settings->updateCompany();
+                    break;
+                default:
+                    throw new Exception('Неизвестное действие');
+            }
+            break;
+        case 'reports':
+            $reports = new ReportsController($db);
+            switch ($action) {
+                case 'getReports':
+                    $reports->getReports();
+                    break;
+                case 'uploadReport':
+                    $reports->uploadReport();
+                    break;
+                case 'deleteReport':
+                    $reports->deleteReport();
+                    break;
+                default:
+                    throw new Exception('Неизвестное действие');
+            }
+            break;
+        case 'merchandisers':
+            $merchandisers = new MerchandisersController($db);
+            switch ($action) {
+                case 'getMerchandisers':
+                    $merchandisers->getMerchandisers();
+                    break;
+                case 'addMerchandiser':
+                    $merchandisers->addMerchandiser();
                     break;
                 default:
                     throw new Exception('Неизвестное действие');

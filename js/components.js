@@ -11,19 +11,18 @@ document.addEventListener('DOMContentLoaded', async function() {
         const user = await checkAuth();
         if (user) {
             // Обновляем информацию пользователя в шапке
-            document.getElementById('userName').textContent = user.name;
-            if (user.avatar_url) {
-                document.getElementById('userAvatar').src = user.avatar_url;
+            const userNameElement = document.getElementById('user-name');
+            const userAvatarElement = document.getElementById('user-avatar');
+            
+            if (userNameElement) userNameElement.textContent = user.name;
+            if (userAvatarElement) {
+                userAvatarElement.src = user.avatar_url || 'images/avatar.png';
+                userAvatarElement.alt = user.name;
             }
         }
 
-        // Инициализация обработчиков уведомлений
-        initializeNotifications();
-
-        // Добавляем загрузку уведомлений
-        await loadNotifications();
-        // Обновляем уведомления каждые 5 минут
-        setInterval(loadNotifications, 300000);
+        // Загружаем уведомления
+        loadNotifications();
     }
 });
 
@@ -72,38 +71,30 @@ async function loadNotifications() {
         const response = await fetch('api/index.php?controller=auth&action=getNotifications');
         const data = await response.json();
 
-        if (!data.success) {
-            throw new Error(data.error);
+        if (data.error) throw new Error(data.error);
+
+        const notificationsList = document.getElementById('notifications-list');
+        const notificationsCount = document.getElementById('notifications-count');
+
+        if (notificationsList) {
+            notificationsList.innerHTML = data.notifications.length ? 
+                data.notifications.map(n => `
+                    <div class="notification-item ${n.is_read ? 'read' : ''}" onclick="markNotificationRead(${n.id})">
+                        <div class="notification-content">
+                            <h6>${n.title}</h6>
+                            <p>${n.message}</p>
+                        </div>
+                        <small>${formatDate(n.created_at)}</small>
+                    </div>
+                `).join('') : 
+                '<div class="no-notifications">Нет новых уведомлений</div>';
         }
 
-        // Обновляем список уведомлений
-        const notificationsBody = document.querySelector('.notifications-body');
-        notificationsBody.innerHTML = data.notifications.map(notification => `
-            <div class="notification-item ${notification.is_read ? '' : 'unread'}" data-id="${notification.id}">
-                <div class="notification-icon ${notification.type}">
-                    <i class="fa fa-${getNotificationIcon(notification.type)}"></i>
-                </div>
-                <div class="notification-content">
-                    <div class="notification-text">
-                        <strong>${notification.title}</strong> ${notification.message}
-                    </div>
-                    <div class="notification-time">${formatNotificationTime(notification.created_at)}</div>
-                </div>
-                ${!notification.is_read ? `
-                    <button class="btn btn-link mark-read">
-                        <i class="fa fa-check"></i>
-                    </button>
-                ` : ''}
-            </div>
-        `).join('');
-
-        // Обновляем счетчик
-        const badge = document.querySelector('.notifications .badge');
-        badge.textContent = data.unread_count;
-        badge.style.display = data.unread_count > 0 ? 'block' : 'none';
-
-        // Переинициализируем обработчики
-        initializeNotificationHandlers();
+        if (notificationsCount) {
+            const unreadCount = data.notifications.filter(n => !n.is_read).length;
+            notificationsCount.textContent = unreadCount;
+            notificationsCount.style.display = unreadCount ? 'block' : 'none';
+        }
 
     } catch (error) {
         console.error('Ошибка при загрузке уведомлений:', error);
@@ -175,5 +166,10 @@ function formatNotificationTime(timestamp) {
     if (diff < 60) return 'только что';
     if (diff < 3600) return `${Math.floor(diff / 60)} мин. назад`;
     if (diff < 86400) return `${Math.floor(diff / 3600)} ч. назад`;
+    return date.toLocaleDateString();
+}
+
+function formatDate(timestamp) {
+    const date = new Date(timestamp);
     return date.toLocaleDateString();
 } 

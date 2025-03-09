@@ -128,5 +128,115 @@ class MerchandisersController extends Api {
             $this->error($e->getMessage());
         }
     }
+
+    public function getMerchandiser() {
+        try {
+            session_start();
+            if (!isset($_SESSION['user'])) {
+                $this->error('Необходима авторизация');
+            }
+
+            $id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
+            if (!$id) {
+                $this->error('Некорректный ID мерчандайзера');
+            }
+
+            $stmt = $this->db->prepare('
+                SELECT id, name, email, phone, region, status 
+                FROM merchandisers 
+                WHERE id = ? AND company_id = ?
+            ');
+            $stmt->execute([$id, $_SESSION['user']['company_id']]);
+            $merchandiser = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$merchandiser) {
+                $this->error('Мерчандайзер не найден');
+            }
+
+            $this->response([
+                'success' => true,
+                'merchandiser' => $merchandiser
+            ]);
+        } catch (Exception $e) {
+            $this->error($e->getMessage());
+        }
+    }
+
+    public function updateMerchandiser() {
+        try {
+            session_start();
+            if (!isset($_SESSION['user'])) {
+                $this->error('Необходима авторизация');
+            }
+
+            $id = filter_input(INPUT_POST, 'id', FILTER_VALIDATE_INT);
+            $name = filter_input(INPUT_POST, 'name', FILTER_SANITIZE_STRING);
+            $email = filter_input(INPUT_POST, 'email', FILTER_VALIDATE_EMAIL);
+            $phone = filter_input(INPUT_POST, 'phone', FILTER_SANITIZE_STRING);
+            $region = filter_input(INPUT_POST, 'region', FILTER_SANITIZE_STRING);
+            $status = filter_input(INPUT_POST, 'status', FILTER_SANITIZE_STRING);
+
+            if (!$id || !$name || !$email || !$phone || !$region || !$status) {
+                $this->error('Все поля обязательны для заполнения');
+            }
+
+            // Проверяем, существует ли мерчандайзер
+            $stmt = $this->db->prepare('
+                SELECT id FROM merchandisers 
+                WHERE id = ? AND company_id = ?
+            ');
+            $stmt->execute([$id, $_SESSION['user']['company_id']]);
+            if (!$stmt->fetch()) {
+                $this->error('Мерчандайзер не найден');
+            }
+
+            // Обновляем данные
+            $stmt = $this->db->prepare('
+                UPDATE merchandisers 
+                SET name = ?, email = ?, phone = ?, region = ?, status = ?
+                WHERE id = ? AND company_id = ?
+            ');
+            $stmt->execute([$name, $email, $phone, $region, $status, $id, $_SESSION['user']['company_id']]);
+
+            $this->response(['success' => true]);
+        } catch (Exception $e) {
+            $this->error($e->getMessage());
+        }
+    }
+
+    public function deleteMerchandiser() {
+        try {
+            session_start();
+            if (!isset($_SESSION['user'])) {
+                $this->error('Необходима авторизация');
+            }
+
+            $id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
+            if (!$id) {
+                $this->error('Некорректный ID мерчандайзера');
+            }
+
+            // Проверяем, существует ли мерчандайзер
+            $stmt = $this->db->prepare('
+                SELECT id FROM merchandisers 
+                WHERE id = ? AND company_id = ?
+            ');
+            $stmt->execute([$id, $_SESSION['user']['company_id']]);
+            if (!$stmt->fetch()) {
+                $this->error('Мерчандайзер не найден');
+            }
+
+            // Удаляем мерчандайзера
+            $stmt = $this->db->prepare('
+                DELETE FROM merchandisers 
+                WHERE id = ? AND company_id = ?
+            ');
+            $stmt->execute([$id, $_SESSION['user']['company_id']]);
+
+            $this->response(['success' => true]);
+        } catch (Exception $e) {
+            $this->error($e->getMessage());
+        }
+    }
 }
 ?> 

@@ -4,8 +4,8 @@ document.addEventListener('DOMContentLoaded', async function() {
     if (!user) return;
 
     const searchInput = document.querySelector('input[placeholder="Поиск по имени..."]');
-    const statusFilter = document.querySelector('select[class="form-select"]');
-    const regionFilter = document.querySelectorAll('select[class="form-select"]')[1];
+    const statusFilter = document.querySelector('select.form-select');
+    const regionFilter = document.querySelectorAll('select.form-select')[1];
     const addForm = document.getElementById('addMerchandiserForm');
 
     // Загружаем мерчандайзеров при загрузке страницы
@@ -113,72 +113,63 @@ async function loadMerchandisers() {
             region: region
         });
 
-        console.log('Загружаем мерчандайзеров с параметрами:', Object.fromEntries(params));
-
         const response = await fetch(`api/index.php?controller=merchandisers&action=getMerchandisers&${params}`);
         const data = await response.json();
-
-        console.log('Получены данные:', data);
 
         if (data.error) {
             throw new Error(data.error);
         }
 
         const container = document.querySelector('.merchandisers-grid');
-        if (!container) {
-            throw new Error('Не найден контейнер для мерчандайзеров');
-        }
-
         container.innerHTML = data.merchandisers.map(m => `
-            <div class="col-md-6 col-xl-4 mb-4">
-                <div class="merchandiser-card">
-                    <div class="merchandiser-header">
-                        <div class="d-flex align-items-center">
-                            <img src="${m.avatar_url || 'images/avatar.png'}" alt="Avatar" class="merchandiser-avatar">
-                            <div class="ms-3">
-                                <h5 class="mb-0">${m.name}</h5>
-                                <span class="badge bg-${getStatusColor(m.status)}">${m.status}</span>
-                            </div>
-                        </div>
-                        <div class="dropdown">
-                            <button class="btn btn-icon" data-bs-toggle="dropdown">
-                                <i class="fa fa-ellipsis-v"></i>
-                            </button>
-                            <div class="dropdown-menu dropdown-menu-end">
-                                <button class="dropdown-item" onclick="editMerchandiser(${m.id})">
-                                    <i class="fa fa-pencil"></i> Редактировать
-                                </button>
-                                <div class="dropdown-divider"></div>
-                                <button class="dropdown-item text-danger" onclick="deleteMerchandiser(${m.id}, '${m.name}')">
-                                    <i class="fa fa-trash"></i> Удалить
-                                </button>
-                            </div>
-                        </div>
+            <div class="merchandiser-card">
+                <div class="merchandiser-header">
+                    <img src="${m.avatar_url || 'images/avatar.png'}" alt="Avatar" class="merchandiser-avatar">
+                    <div class="merchandiser-info">
+                        <h5>${m.name}</h5>
+                        <span class="badge bg-${getStatusColor(m.status)}">${getStatusText(m.status)}</span>
                     </div>
-                    <div class="merchandiser-stats">
-                        <div class="stat-item">
-                            <span class="stat-label">Посещений</span>
-                            <span class="stat-value">${m.visits_count || 0}</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-label">Эффективность</span>
-                            <span class="stat-value">${Math.round(m.efficiency || 0)}%</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-label">Отчетов</span>
-                            <span class="stat-value">${m.reports_count || 0}</span>
-                        </div>
-                    </div>
-                    <div class="merchandiser-footer">
-                        <div class="region">
-                            <i class="fa fa-map-marker"></i>
-                            <span>${m.region}</span>
-                        </div>
-                        <button class="btn btn-outline-primary btn-sm" onclick="window.location.href='mailto:${m.email}'">
-                            <i class="fa fa-envelope"></i>
-                            Написать
+                    <div class="dropdown">
+                        <button class="btn btn-icon" type="button" data-bs-toggle="dropdown">
+                            <i class="fa fa-ellipsis-v"></i>
                         </button>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a class="dropdown-item" href="#" onclick="editMerchandiser(${m.id}); return false;">
+                                    <i class="fa fa-pencil"></i> Редактировать
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item text-danger" href="#" onclick="deleteMerchandiser(${m.id}, '${m.name}'); return false;">
+                                    <i class="fa fa-trash"></i> Удалить
+                                </a>
+                            </li>
+                        </ul>
                     </div>
+                </div>
+                <div class="merchandiser-stats">
+                    <div class="stat-item">
+                        <span class="stat-label">Посещений</span>
+                        <span class="stat-value">${m.visits_count || 0}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Эффективность</span>
+                        <span class="stat-value">${Math.round(m.efficiency || 0)}%</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Отчетов</span>
+                        <span class="stat-value">${m.reports_count || 0}</span>
+                    </div>
+                </div>
+                <div class="merchandiser-footer">
+                    <div class="region">
+                        <i class="fa fa-map-marker"></i>
+                        <span>${m.region}</span>
+                    </div>
+                    <a href="mailto:${m.email}" class="btn btn-outline-primary btn-sm">
+                        <i class="fa fa-envelope"></i> Написать
+                    </a>
                 </div>
             </div>
         `).join('');
@@ -196,6 +187,15 @@ function getStatusColor(status) {
         'pending': 'warning'
     };
     return colors[status] || 'secondary';
+}
+
+function getStatusText(status) {
+    const texts = {
+        'active': 'Активный',
+        'inactive': 'Неактивный',
+        'pending': 'В ожидании'
+    };
+    return texts[status] || status;
 }
 
 // Остальные вспомогательные функции...
@@ -221,46 +221,88 @@ function showNotification(message, type = 'success') {
     setTimeout(() => notification.remove(), 3000);
 }
 
-// Функции для работы с мерчандайзерами
-function editMerchandiser(name) {
-    // Открываем модальное окно редактирования
-    const modal = new bootstrap.Modal(document.getElementById('editMerchandiserModal'));
-    
-    // Находим данные мерчандайзера
-    const merchandiserCard = document.querySelector(`.merchandiser-card:has(h5:contains("${name}"))`);
-    const region = merchandiserCard.querySelector('.region span').textContent;
-    
-    // Заполняем форму текущими данными
-    const form = document.getElementById('editMerchandiserForm');
-    form.querySelector('[name="name"]').value = name;
-    form.querySelector('[name="region"]').value = region;
-    
-    // Показываем модальное окно
-    modal.show();
+// Функция для редактирования мерчандайзера
+async function editMerchandiser(id) {
+    try {
+        console.log('Редактирование мерчандайзера:', id); // Отладка
+        const response = await fetch(`api/index.php?controller=merchandisers&action=getMerchandiser&id=${id}`);
+        const data = await response.json();
+        console.log('Получены данные:', data); // Отладка
+
+        if (!data.success) {
+            throw new Error(data.error || 'Ошибка при получении данных мерчандайзера');
+        }
+
+        // Заполняем форму редактирования
+        const form = document.getElementById('editMerchandiserForm');
+        form.querySelector('[name="id"]').value = id;
+        form.querySelector('[name="name"]').value = data.merchandiser.name;
+        form.querySelector('[name="email"]').value = data.merchandiser.email;
+        form.querySelector('[name="phone"]').value = data.merchandiser.phone;
+        form.querySelector('[name="region"]').value = data.merchandiser.region;
+        form.querySelector('[name="status"]').value = data.merchandiser.status;
+
+        // Показываем модальное окно
+        const modal = new bootstrap.Modal(document.getElementById('editMerchandiserModal'));
+        modal.show();
+
+    } catch (error) {
+        console.error('Ошибка при загрузке данных мерчандайзера:', error);
+        showNotification(error.message, 'error');
+    }
 }
 
 // Обработчик формы редактирования
-document.getElementById('editMerchandiserForm')?.addEventListener('submit', function(e) {
+document.getElementById('editMerchandiserForm')?.addEventListener('submit', async function(e) {
     e.preventDefault();
     
-    // Здесь будет отправка данных на сервер
-    const formData = new FormData(this);
-    console.log('Редактирование мерчандайзера:', Object.fromEntries(formData));
-    
-    // Закрываем модальное окно
-    const modal = bootstrap.Modal.getInstance(document.getElementById('editMerchandiserModal'));
-    modal.hide();
-    
-    // Показываем уведомление
-    showNotification('Данные мерчандайзера обновлены');
+    try {
+        const formData = new FormData(this);
+        const response = await fetch('api/index.php?controller=merchandisers&action=updateMerchandiser', {
+            method: 'POST',
+            body: formData
+        });
+
+        const data = await response.json();
+        
+        if (!data.success) {
+            throw new Error(data.error || 'Ошибка при обновлении данных');
+        }
+
+        // Закрываем модальное окно
+        const modal = bootstrap.Modal.getInstance(document.getElementById('editMerchandiserModal'));
+        modal.hide();
+        
+        // Обновляем список мерчандайзеров
+        loadMerchandisers();
+        
+        // Показываем уведомление
+        showNotification('Данные мерчандайзера обновлены');
+    } catch (error) {
+        console.error('Ошибка при обновлении данных:', error);
+        showNotification(error.message, 'error');
+    }
 });
 
-function deleteMerchandiser(id, name) {
+// Функция удаления мерчандайзера
+async function deleteMerchandiser(id, name) {
     if (confirm(`Вы уверены, что хотите удалить мерчандайзера "${name}"?`)) {
-        // Здесь будет запрос на удаление
-        console.log('Удаление:', id);
-        const card = document.querySelector(`.merchandiser-card:has(h5:contains("${name}"))`);
-        card.closest('.col-md-6').remove();
-        showNotification('Мерчандайзер успешно удален');
+        try {
+            console.log('Удаление мерчандайзера:', id); // Отладка
+            const response = await fetch(`api/index.php?controller=merchandisers&action=deleteMerchandiser&id=${id}`);
+            const data = await response.json();
+            console.log('Ответ сервера:', data); // Отладка
+
+            if (!data.success) {
+                throw new Error(data.error || 'Ошибка при удалении мерчандайзера');
+            }
+            
+            // Перезагружаем список
+            loadMerchandisers();
+            showNotification('Мерчандайзер успешно удален');
+        } catch (error) {
+            console.error('Ошибка при удалении мерчандайзера:', error);
+            showNotification(error.message, 'error');
+        }
     }
 } 

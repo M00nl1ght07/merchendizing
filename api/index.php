@@ -18,7 +18,7 @@ require_once 'MerchandisersController.php';
 
 // Устанавливаем заголовки
 header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
+header('Access-Control-Allow-Methods: GET, POST, DELETE');
 header('Access-Control-Allow-Headers: Content-Type');
 header('Content-Type: application/json; charset=utf-8');
 
@@ -134,6 +134,15 @@ try {
                 case 'addMerchandiser':
                     $merchandisers->addMerchandiser();
                     break;
+                case 'getMerchandiser':
+                    $merchandisers->getMerchandiser();
+                    break;
+                case 'updateMerchandiser':
+                    $merchandisers->updateMerchandiser();
+                    break;
+                case 'deleteMerchandiser':
+                    $merchandisers->deleteMerchandiser();
+                    break;
                 default:
                     throw new Exception('Неизвестное действие');
             }
@@ -143,6 +152,9 @@ try {
     }
 } catch (Exception $e) {
     http_response_code(400);
-    echo json_encode(['error' => $e->getMessage()], JSON_UNESCAPED_UNICODE);
+    echo json_encode([
+        'success' => false,
+        'error' => $e->getMessage()
+    ]);
 }
 ?> 

@@ -54,12 +54,34 @@ document.addEventListener('DOMContentLoaded', async function() {
             attribution: '© OpenStreetMap contributors'
         }).addTo(map);
 
-        // Добавляем обработчик изменения региона
+        // Добавляем обработчик поиска по названию
+        const searchInput = document.querySelector('input[placeholder="Поиск по названию..."]');
+        if (searchInput) {
+            searchInput.addEventListener('input', debounce(async function() {
+                await updateMap(regionSelect.value, this.value);
+            }, 300));
+        }
+
+        // Обновляем обработчик изменения региона
         const regionSelect = document.querySelector('select.form-select');
         if (regionSelect) {
             regionSelect.addEventListener('change', async function() {
-                const selectedRegion = this.value;
-                await updateMap(selectedRegion);
+                const selectedRegion = this.value.toLowerCase();
+                if (cityCoordinates[selectedRegion]) {
+                    // Если выбран город из списка - центрируем карту на нем
+                    const coords = cityCoordinates[selectedRegion];
+                    map.setView(coords.center, coords.zoom);
+                }
+                await updateMap(selectedRegion, searchInput.value);
+            });
+        }
+
+        // Добавляем обработчик формы добавления точки
+        const addLocationForm = document.getElementById('addLocationForm');
+        if (addLocationForm) {
+            addLocationForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                await addLocation(this);
             });
         }
 
@@ -73,16 +95,19 @@ document.addEventListener('DOMContentLoaded', async function() {
 });
 
 // Функция обновления карты и списка точек
-async function updateMap(region = '') {
+async function updateMap(region = '', search = '') {
     try {
         // Очищаем существующие маркеры
         markers.forEach(marker => map.removeLayer(marker));
         markers = [];
 
-        // Формируем URL с учетом фильтра по региону
+        // Формируем URL с учетом фильтров
         let url = 'api/index.php?controller=locations&action=getLocations';
         if (region && region !== 'Все регионы') {
             url += `&region=${encodeURIComponent(region)}`;
+        }
+        if (search) {
+            url += `&search=${encodeURIComponent(search)}`;
         }
 
         const response = await fetch(url);
@@ -121,6 +146,9 @@ async function updateMap(region = '') {
                         </div>
                     </div>
                     <div class="location-actions">
+                        <button class="btn btn-sm btn-success" onclick="manageMerchandisers(${location.id})">
+                            <i class="fa fa-users"></i>
+                        </button>
                         <button class="btn btn-sm btn-primary" onclick="editLocation(${location.id})">
                             <i class="fa fa-edit"></i>
                         </button>
@@ -307,6 +335,39 @@ async function manageMerchandisers(locationId) {
 
     } catch (error) {
         console.error('Ошибка при загрузке мерчендайзеров:', error);
+        showNotification(error.message, 'error');
+    }
+}
+
+// Добавляем функцию создания новой точки
+async function addLocation(form) {
+    try {
+        const formData = new FormData(form);
+        
+        const response = await fetch('api/index.php?controller=locations&action=addLocation', {
+            method: 'POST',
+            body: formData
+        });
+
+        const data = await response.json();
+
+        if (!data.success) {
+            throw new Error(data.error || 'Ошибка при добавлении точки');
+        }
+
+        // Закрываем модальное окно
+        const modal = bootstrap.Modal.getInstance(document.getElementById('addLocationModal'));
+        modal.hide();
+
+        // Очищаем форму
+        form.reset();
+
+        // Обновляем карту
+        await updateMap();
+        showNotification('Точка продаж успешно добавлена');
+
+    } catch (error) {
+        console.error('Ошибка при добавлении точки:', error);
         showNotification(error.message, 'error');
     }
 } 

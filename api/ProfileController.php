@@ -5,56 +5,39 @@ class ProfileController extends Api {
     
     public function getProfile() {
         try {
-            session_start();
             if (!isset($_SESSION['user'])) {
                 $this->error('Необходима авторизация');
             }
 
-            $userId = $_SESSION['user']['id'];
+            $user = $_SESSION['user'];
+            
+            // Проверяем тип пользователя из сессии
+            if ($user['type'] === 'admin') {
+                $stmt = $this->db->prepare('
+                    SELECT u.*, c.name as company_name 
+                    FROM users u 
+                    JOIN companies c ON u.company_id = c.id 
+                    WHERE u.id = ? AND u.role = "admin"
+                ');
+                $stmt->execute([$user['id']]);
+            } else {
+                $stmt = $this->db->prepare('
+                    SELECT m.*, c.name as company_name 
+                    FROM merchandisers m 
+                    JOIN companies c ON m.company_id = c.id 
+                    WHERE m.id = ? AND m.status = "active"
+                ');
+                $stmt->execute([$user['id']]);
+            }
 
-            // Получаем полные данные профиля
-            $stmt = $this->db->prepare('
-                SELECT 
-                    u.id,
-                    u.name,
-                    u.email,
-                    u.role,
-                    u.avatar_url,
-                    u.phone,
-                    c.name as company_name,
-                    c.id as company_id
-                FROM users u
-                LEFT JOIN companies c ON u.company_id = c.id
-                WHERE u.id = ?
-            ');
-            $stmt->execute([$userId]);
             $profile = $stmt->fetch(PDO::FETCH_ASSOC);
-
             if (!$profile) {
                 $this->error('Профиль не найден');
             }
 
-            // Получаем статистику активности
-            $stmt = $this->db->prepare('
-                SELECT 
-                    COUNT(r.id) as reports_count,
-                    (SELECT COUNT(*) FROM merchandisers WHERE company_id = ? AND status = "active") as active_merchandisers,
-                    COALESCE(AVG(r.efficiency), 0) as avg_efficiency
-                FROM reports r
-                JOIN merchandisers m ON r.merchandiser_id = m.id
-                WHERE m.company_id = ?
-            ');
-            $stmt->execute([$profile['company_id'], $profile['company_id']]);
-            $stats = $stmt->fetch(PDO::FETCH_ASSOC);
-
             $this->response([
                 'success' => true,
-                'profile' => $profile,
-                'stats' => [
-                    'reports' => (int)$stats['reports_count'],
-                    'merchandisers' => (int)$stats['active_merchandisers'],
-                    'efficiency' => round($stats['avg_efficiency'])
-                ]
+                'profile' => $profile
             ]);
 
         } catch (Exception $e) {
@@ -64,39 +47,40 @@ class ProfileController extends Api {
 
     public function updateProfile() {
         try {
-            session_start();
             if (!isset($_SESSION['user'])) {
                 $this->error('Необходима авторизация');
             }
 
-            $userId = $_SESSION['user']['id'];
-            $name = filter_input(INPUT_POST, 'name', FILTER_SANITIZE_STRING);
-            $email = filter_input(INPUT_POST, 'email', FILTER_VALIDATE_EMAIL);
-            $phone = filter_input(INPUT_POST, 'phone', FILTER_SANITIZE_STRING);
+            $user = $_SESSION['user'];
+            
+            // Получаем данные из формы
+            $name = $_POST['name'] ?? '';
+            $email = $_POST['email'] ?? '';
+            $phone = $_POST['phone'] ?? '';
 
-            if (!$name || !$email || !$phone) {
-                $this->error('Все поля обязательны для заполнения');
+            // Проверяем тип пользователя из сессии
+            if ($user['type'] === 'admin') {
+                $stmt = $this->db->prepare('
+                    UPDATE users 
+                    SET name = ?, email = ?, phone = ? 
+                    WHERE id = ? AND role = "admin"
+                ');
+                $stmt->execute([$name, $email, $phone, $user['id']]);
+            } else {
+                $region = $_POST['region'] ?? '';
+                $stmt = $this->db->prepare('
+                    UPDATE merchandisers 
+                    SET name = ?, email = ?, phone = ?, region = ? 
+                    WHERE id = ? AND status = "active"
+                ');
+                $stmt->execute([$name, $email, $phone, $region, $user['id']]);
+
+                // Обновляем данные в сессии
+                $_SESSION['user']['name'] = $name;
+                $_SESSION['user']['email'] = $email;
+                $_SESSION['user']['phone'] = $phone;
+                $_SESSION['user']['region'] = $region;
             }
-
-            // Проверяем, не занят ли email другим пользователем
-            $stmt = $this->db->prepare('SELECT id FROM users WHERE email = ? AND id != ?');
-            $stmt->execute([$email, $userId]);
-            if ($stmt->fetch()) {
-                $this->error('Этот email уже используется');
-            }
-
-            // Обновляем данные в таблице users
-            $stmt = $this->db->prepare('
-                UPDATE users 
-                SET name = ?, email = ?, phone = ?
-                WHERE id = ?
-            ');
-            $stmt->execute([$name, $email, $phone, $userId]);
-
-            // Обновляем данные в сессии
-            $_SESSION['user']['name'] = $name;
-            $_SESSION['user']['email'] = $email;
-            $_SESSION['user']['phone'] = $phone;
 
             $this->response(['success' => true]);
 
@@ -107,12 +91,11 @@ class ProfileController extends Api {
 
     public function updatePassword() {
         try {
-            session_start();
             if (!isset($_SESSION['user'])) {
                 $this->error('Необходима авторизация');
             }
 
-            $userId = $_SESSION['user']['id'];
+            $user = $_SESSION['user'];
             $currentPassword = $_POST['currentPassword'] ?? '';
             $newPassword = $_POST['newPassword'] ?? '';
 
@@ -120,19 +103,30 @@ class ProfileController extends Api {
                 $this->error('Все поля обязательны для заполнения');
             }
 
-            // Проверяем текущий пароль
-            $stmt = $this->db->prepare('SELECT password_hash FROM users WHERE id = ?');
-            $stmt->execute([$userId]);
-            $user = $stmt->fetch(PDO::FETCH_ASSOC);
+            // Проверяем текущий пароль в зависимости от типа пользователя
+            if ($user['type'] === 'admin') {
+                $stmt = $this->db->prepare('SELECT password_hash FROM users WHERE id = ? AND role = "admin"');
+            } else {
+                $stmt = $this->db->prepare('SELECT password_hash FROM merchandisers WHERE id = ? AND status = "active"');
+            }
+            
+            $stmt->execute([$user['id']]);
+            $userData = $stmt->fetch(PDO::FETCH_ASSOC);
 
-            if (!password_verify($currentPassword, $user['password_hash'])) {
+            if (!$userData || !password_verify($currentPassword, $userData['password_hash'])) {
                 $this->error('Неверный текущий пароль');
             }
 
             // Обновляем пароль
             $newHash = password_hash($newPassword, PASSWORD_DEFAULT);
-            $stmt = $this->db->prepare('UPDATE users SET password_hash = ? WHERE id = ?');
-            $stmt->execute([$newHash, $userId]);
+            
+            if ($user['type'] === 'admin') {
+                $stmt = $this->db->prepare('UPDATE users SET password_hash = ? WHERE id = ? AND role = "admin"');
+            } else {
+                $stmt = $this->db->prepare('UPDATE merchandisers SET password_hash = ? WHERE id = ? AND status = "active"');
+            }
+            
+            $stmt->execute([$newHash, $user['id']]);
 
             $this->response(['success' => true]);
 
@@ -143,7 +137,6 @@ class ProfileController extends Api {
 
     public function updateAvatar() {
         try {
-            session_start();
             if (!isset($_SESSION['user'])) {
                 $this->error('Необходима авторизация');
             }
@@ -153,7 +146,7 @@ class ProfileController extends Api {
             }
 
             $file = $_FILES['avatar'];
-            $userId = $_SESSION['user']['id'];
+            $user = $_SESSION['user'];
             
             // Проверяем тип файла
             $allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
@@ -163,7 +156,7 @@ class ProfileController extends Api {
 
             // Генерируем новое имя файла
             $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
-            $newFileName = 'avatar_' . $userId . '_' . time() . '.' . $ext;
+            $newFileName = 'avatar_' . $user['id'] . '_' . time() . '.' . $ext;
             $uploadPath = '../uploads/avatars/' . $newFileName;
 
             // Создаем директорию, если её нет
@@ -176,10 +169,16 @@ class ProfileController extends Api {
                 $this->error('Ошибка при загрузке файла');
             }
 
-            // Обновляем путь к аватару в БД
+            // Обновляем путь к аватару в БД в зависимости от типа пользователя
             $avatarUrl = 'uploads/avatars/' . $newFileName;
-            $stmt = $this->db->prepare('UPDATE users SET avatar_url = ? WHERE id = ?');
-            $stmt->execute([$avatarUrl, $userId]);
+            
+            if ($user['type'] === 'admin') {
+                $stmt = $this->db->prepare('UPDATE users SET avatar_url = ? WHERE id = ? AND role = "admin"');
+            } else {
+                $stmt = $this->db->prepare('UPDATE merchandisers SET avatar_url = ? WHERE id = ? AND status = "active"');
+            }
+            
+            $stmt->execute([$avatarUrl, $user['id']]);
 
             // Обновляем данные в сессии
             $_SESSION['user']['avatar_url'] = $avatarUrl;

@@ -29,14 +29,13 @@ class AuthController extends Api {
                 }
 
                 $user['type'] = 'admin';
-
             } else {
-                // Проверяем в таблице merchandisers (мерчендайзеры)
+                // Проверяем в таблице merchandisers
                 $stmt = $this->db->prepare('
                     SELECT m.*, c.name as company_name 
-                    FROM merchandisers m
+                    FROM merchandisers m 
                     JOIN companies c ON m.company_id = c.id 
-                    WHERE m.email = ?
+                    WHERE m.email = ? AND m.status = "active"
                 ');
                 $stmt->execute([$email]);
                 $user = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -47,6 +46,9 @@ class AuthController extends Api {
 
                 $user['type'] = 'merchandiser';
             }
+
+            // Очищаем пароль из данных сессии
+            unset($user['password_hash']);
 
             // Сохраняем в сессию
             $_SESSION['user'] = $user;

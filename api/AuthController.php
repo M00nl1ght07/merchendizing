@@ -4,38 +4,69 @@ require_once __DIR__ . '/../config/mail.php';
 
 class AuthController extends Api {
     public function login() {
-        $email = filter_input(INPUT_POST, 'email', FILTER_VALIDATE_EMAIL);
-        $password = $_POST['password'] ?? '';
-        
-        if (!$email || !$password) {
-            $this->error('Неверный email или пароль');
+        try {
+            $email = filter_input(INPUT_POST, 'email', FILTER_VALIDATE_EMAIL);
+            $password = $_POST['password'] ?? '';
+            $userType = $_POST['userType'] ?? 'admin';
+
+            if (!$email || !$password) {
+                $this->error('Email и пароль обязательны');
+            }
+
+            if ($userType === 'admin') {
+                // Проверяем в таблице users (администраторы)
+                $stmt = $this->db->prepare('
+                    SELECT u.*, c.name as company_name 
+                    FROM users u 
+                    JOIN companies c ON u.company_id = c.id 
+                    WHERE u.email = ? AND u.role = ?
+                ');
+                $stmt->execute([$email, 'admin']);
+                $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+                if (!$user || !password_verify($password, $user['password_hash'])) {
+                    $this->error('Неверный email или пароль');
+                }
+
+                $user['type'] = 'admin';
+
+            } else {
+                // Проверяем в таблице merchandisers (мерчендайзеры)
+                $stmt = $this->db->prepare('
+                    SELECT m.*, c.name as company_name 
+                    FROM merchandisers m
+                    JOIN companies c ON m.company_id = c.id 
+                    WHERE m.email = ?
+                ');
+                $stmt->execute([$email]);
+                $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+                if (!$user || !password_verify($password, $user['password_hash'])) {
+                    $this->error('Неверный email или пароль');
+                }
+
+                $user['type'] = 'merchandiser';
+            }
+
+            // Сохраняем в сессию
+            $_SESSION['user'] = $user;
+
+            $this->response([
+                'success' => true,
+                'user' => [
+                    'id' => $user['id'],
+                    'name' => $user['name'],
+                    'email' => $user['email'],
+                    'type' => $user['type'],
+                    'company_id' => $user['company_id'],
+                    'company_name' => $user['company_name'],
+                    'avatar_url' => $user['avatar_url'] ?? null
+                ]
+            ]);
+
+        } catch (Exception $e) {
+            $this->error($e->getMessage());
         }
-        
-        // Получаем полные данные пользователя
-        $stmt = $this->db->prepare('
-            SELECT u.id, u.password_hash, u.name, u.role, u.avatar_url, u.company_id, 
-                   c.name as company_name
-            FROM users u
-            LEFT JOIN companies c ON u.company_id = c.id
-            WHERE u.email = ?
-        ');
-        $stmt->execute([$email]);
-        $user = $stmt->fetch(PDO::FETCH_ASSOC);
-        
-        if (!$user || !password_verify($password, $user['password_hash'])) {
-            $this->error('Неверный email или пароль');
-        }
-        
-        // Удаляем хеш пароля из данных сессии
-        unset($user['password_hash']);
-        
-        session_start();
-        $_SESSION['user'] = $user;
-        
-        $this->response([
-            'success' => true,
-            'user' => $user
-        ]);
     }
 
     public function register() {
@@ -391,31 +422,51 @@ class AuthController extends Api {
     }
 
     public function checkAuth() {
-        session_start();
-        if (!isset($_SESSION['user'])) {
-            $this->error('Не авторизован');
+        try {
+            session_start();
+            if (!isset($_SESSION['user'])) {
+                $this->error('Необходима авторизация');
+            }
+
+            // Проверяем тип пользователя и делаем соответствующий запрос
+            if ($_SESSION['user']['type'] === 'admin') {
+                $stmt = $this->db->prepare('
+                    SELECT u.*, c.name as company_name 
+                    FROM users u 
+                    JOIN companies c ON u.company_id = c.id 
+                    WHERE u.id = ? AND u.role = ?
+                ');
+                $stmt->execute([$_SESSION['user']['id'], 'admin']);
+            } else {
+                $stmt = $this->db->prepare('
+                    SELECT m.*, c.name as company_name 
+                    FROM merchandisers m
+                    JOIN companies c ON m.company_id = c.id 
+                    WHERE m.id = ? AND m.status = ?
+                ');
+                $stmt->execute([$_SESSION['user']['id'], 'active']);
+            }
+
+            $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$user) {
+                $this->error('Пользователь не найден');
+            }
+
+            // Добавляем тип пользователя
+            $user['type'] = $_SESSION['user']['type'];
+            
+            // Удаляем хеш пароля
+            unset($user['password_hash']);
+
+            $this->response([
+                'success' => true,
+                'user' => $user
+            ]);
+
+        } catch (Exception $e) {
+            $this->error($e->getMessage());
         }
-
-        // Получаем актуальные данные пользователя из БД
-        $stmt = $this->db->prepare('
-            SELECT u.id, u.name, u.email, u.role, u.avatar_url, u.company_id, c.name as company_name
-            FROM users u
-            LEFT JOIN companies c ON u.company_id = c.id
-            WHERE u.id = ?
-        ');
-        $stmt->execute([$_SESSION['user']['id']]);
-        $user = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        if (!$user) {
-            unset($_SESSION['user']);
-            $this->error('Пользователь не найден');
-        }
-
-        $_SESSION['user'] = $user;
-        $this->response([
-            'success' => true,
-            'user' => $user
-        ]);
     }
 
     public function logout() {

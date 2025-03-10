@@ -1,12 +1,20 @@
 document.addEventListener('DOMContentLoaded', async function() {
     // Проверяем авторизацию
     const user = await checkAuth();
-    if (!user) {
-        window.location.href = 'login.html';
+    if (!user) return;
+
+    // Если пользователь мерчендайзер - блокируем все поля и выходим
+    if (user.role === 'merchandiser') {
+        document.querySelectorAll('input, select, textarea').forEach(input => {
+            input.disabled = true;
+        });
+        document.querySelectorAll('button[type="submit"], .settings-nav button').forEach(button => {
+            button.style.display = 'none';
+        });
         return;
     }
 
-    // Загружаем данные компании
+    // Загружаем данные компании (только для админа)
     try {
         const response = await fetch('api/index.php?controller=settings&action=getCompanySettings');
         const data = await response.json();
@@ -66,32 +74,34 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     } catch (error) {
         console.error('Ошибка при загрузке настроек:', error);
-        alert('Ошибка при загрузке настроек компании');
+        showNotification('Ошибка при загрузке настроек компании', 'error');
     }
 
-    // Обработка формы компании
+    // Обработка формы компании (только для админа)
     const companyForm = document.getElementById('companyForm');
-    companyForm.addEventListener('submit', async function(e) {
-        e.preventDefault();
-        
-        const formData = new FormData(this);
-        try {
-            const response = await fetch('api/index.php?controller=settings&action=updateCompany', {
-                method: 'POST',
-                body: formData
-            });
+    if (companyForm) {
+        companyForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            try {
+                const response = await fetch('api/index.php?controller=settings&action=updateCompany', {
+                    method: 'POST',
+                    body: formData
+                });
 
-            const data = await response.json();
-            if (data.success) {
-                alert('Настройки компании сохранены');
-            } else {
-                throw new Error(data.error);
+                const data = await response.json();
+                if (data.success) {
+                    showNotification('Настройки компании сохранены', 'success');
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (error) {
+                console.error('Ошибка при сохранении настроек:', error);
+                showNotification(error.message || 'Ошибка при сохранении настроек', 'error');
             }
-        } catch (error) {
-            console.error('Ошибка при сохранении настроек:', error);
-            alert(error.message || 'Ошибка при сохранении настроек');
-        }
-    });
+        });
+    }
 
     // Переключение вкладок
     const navButtons = document.querySelectorAll('.settings-nav .btn');

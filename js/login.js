@@ -1,3 +1,12 @@
+// Добавляем функцию показа уведомлений
+function showNotification(message, type = 'success') {
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+    setTimeout(() => notification.remove(), 3000);
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     const loginForm = document.getElementById('loginForm');
     const passwordInput = document.getElementById('password');
@@ -16,38 +25,32 @@ document.addEventListener('DOMContentLoaded', function() {
     // Обработка входа
     loginForm.addEventListener('submit', async function(e) {
         e.preventDefault();
-
-        const formData = {
-            email: document.getElementById('email').value.trim(),
-            password: passwordInput.value
-        };
+        
+        const formData = new FormData(this);
+        
+        // Отладочный вывод
+        console.log('Отправляемые данные:', {
+            email: formData.get('email'),
+            userType: formData.get('userType')
+        });
 
         try {
             const response = await fetch('api/index.php?controller=auth&action=login', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: Object.entries(formData)
-                    .map(([key, value]) => `${key}=${encodeURIComponent(value)}`)
-                    .join('&')
+                body: formData
             });
 
-            if (!response.ok) {
-                throw new Error('Ошибка сети');
-            }
-
             const data = await response.json();
+            console.log('Ответ сервера:', data); // Отладочный вывод
 
-            if (data.error) {
-                throw new Error(data.error);
+            if (data.success) {
+                window.location.href = 'dashboard.html';
+            } else {
+                showNotification(data.error, 'error');
             }
-
-            // Успешный вход
-            window.location.href = 'dashboard.html';
-
         } catch (error) {
-            alert(error.message || 'Ошибка при входе');
+            console.error('Ошибка:', error);
+            showNotification('Произошла ошибка при входе', 'error');
         }
     });
 }); 

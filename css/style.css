@@ -349,4 +349,57 @@ body.dark-theme {
 .benefit-icon i {
     font-size: 24px;
     color: white;
+}
+
+/* Стили для управления видимостью элементов в зависимости от роли */
+.admin-only {
+    display: none;
+}
+
+body[data-user-type="admin"] .admin-only {
+    display: block;
+}
+
+/* Для элементов списка */
+body[data-user-type="admin"] li.admin-only {
+    display: list-item;
+}
+
+/* Для кнопок и других inline элементов */
+body[data-user-type="admin"] .admin-only.btn,
+body[data-user-type="admin"] .admin-only.inline {
+    display: inline-block;
+}
+
+/* Стили для уведомлений */
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 15px 25px;
+    border-radius: 8px;
+    background: var(--dark-surface);
+    color: var(--text-primary);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    animation: slideIn 0.3s ease-out;
+}
+
+.notification.success {
+    background: #4CAF50;
+}
+
+.notification.error {
+    background: #FF5252;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
 } 

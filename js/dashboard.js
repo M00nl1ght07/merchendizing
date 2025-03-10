@@ -6,7 +6,14 @@ document.addEventListener('DOMContentLoaded', async function() {
     const user = await checkAuth();
     if (!user) return;
 
-    console.log('Страница загружена, начинаем инициализацию...');
+    // Мерчендайзерам тут делать нечего
+    if (user.role === 'merchandiser') {
+        window.location.href = 'profile.html';
+        return;
+    }
+
+    // Устанавливаем класс для body
+    document.body.setAttribute('data-user-type', user.role);
 
     // Инициализация меню
     let menuToggle = document.querySelector('.menu-toggle');
@@ -26,9 +33,11 @@ document.addEventListener('DOMContentLoaded', async function() {
         });
     }
 
-    // Загрузка статистики
-    loadDashboardStats();
-    loadTopMerchandisers();
+    // Загрузка данных
+    await Promise.all([
+        loadDashboardStats(),
+        loadTopMerchandisers()
+    ]);
 
     // Обработчики для переключения периодов графиков
     document.querySelectorAll('[data-period]').forEach(button => {

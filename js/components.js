@@ -19,6 +19,9 @@ document.addEventListener('DOMContentLoaded', async function() {
                 userAvatarElement.src = user.avatar_url || 'images/avatar.png';
                 userAvatarElement.alt = user.name;
             }
+
+            // Устанавливаем тип пользователя на body
+            document.body.setAttribute('data-user-type', user.type);
         }
 
         // Загружаем уведомления

@@ -31,6 +31,7 @@ const cityCoordinates = {
 let map;
 let markers = [];
 let currentLocationId;
+let searchTimeout;
 
 document.addEventListener('DOMContentLoaded', async function() {
     try {
@@ -62,10 +63,13 @@ document.addEventListener('DOMContentLoaded', async function() {
 
         // Добавляем обработчик поиска по названию
         if (searchInput) {
-            searchInput.addEventListener('input', debounce(async function() {
-                const region = regionSelect ? regionSelect.value : '';
-                await updateMap(region, this.value);
-            }, 300));
+            searchInput.addEventListener('input', function() {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(async () => {
+                    const region = regionSelect ? regionSelect.value : '';
+                    await updateMap(region, this.value.trim());
+                }, 300);
+            });
         }
 
         // Обновляем обработчик изменения региона
@@ -107,15 +111,18 @@ async function updateMap(region = '', search = '') {
         markers = [];
 
         // Формируем URL с учетом фильтров
-        let url = 'api/index.php?controller=locations&action=getLocations';
+        const params = new URLSearchParams();
+        params.append('controller', 'locations');
+        params.append('action', 'getLocations');
+        
         if (region && region !== 'Все регионы') {
-            url += `&region=${encodeURIComponent(region)}`;
+            params.append('region', region);
         }
         if (search) {
-            url += `&search=${encodeURIComponent(search)}`;
+            params.append('search', search);
         }
 
-        const response = await fetch(url);
+        const response = await fetch(`api/index.php?${params.toString()}`);
         const data = await response.json();
 
         if (!data.success) {
@@ -149,9 +156,9 @@ async function updateMap(region = '', search = '') {
                         <h6>${location.name}</h6>
                         <p class="address"><i class="fa fa-map-marker"></i> ${location.address}</p>
                         <div class="location-stats">
-                            <span><i class="fa fa-user"></i> ${location.merchandisers_count}</span>
-                            <span><i class="fa fa-file-text"></i> ${location.reports_count}</span>
-                            <span><i class="fa fa-line-chart"></i> ${Math.round(location.efficiency)}%</span>
+                            <span><i class="fa fa-user"></i> ${location.merchandisers_count || 0} мерчендайзер(ов)</span>
+                            <span><i class="fa fa-file-text"></i> ${location.reports_count || 0}</span>
+                            <span><i class="fa fa-line-chart"></i> ${Math.round(location.efficiency || 0)}%</span>
                         </div>
                     </div>
                     ${isAdmin ? `

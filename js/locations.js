@@ -149,14 +149,19 @@ async function updateMap(region = '', search = '') {
             const user = JSON.parse(localStorage.getItem('user'));
             const isAdmin = user && user.type === 'admin';
 
-            // Возвращаем HTML для списка
+            // Правильное склонение слова "мерчендайзер"
+            const merchCount = location.merchandisers_count || 0;
+            const merchWord = merchCount === 1 ? 'мерчендайзер' : 
+                             merchCount >= 2 && merchCount <= 4 ? 'мерчендайзера' : 
+                             'мерчендайзеров';
+
             return `
                 <div class="location-item" data-id="${location.id}">
                     <div class="location-info">
                         <h6>${location.name}</h6>
                         <p class="address"><i class="fa fa-map-marker"></i> ${location.address}</p>
                         <div class="location-stats">
-                            <span><i class="fa fa-user"></i> ${location.merchandisers_count || 0} мерчендайзер(ов)</span>
+                            <span><i class="fa fa-user"></i> ${merchCount} ${merchWord}</span>
                             <span><i class="fa fa-file-text"></i> ${location.reports_count || 0}</span>
                             <span><i class="fa fa-line-chart"></i> ${Math.round(location.efficiency || 0)}%</span>
                         </div>

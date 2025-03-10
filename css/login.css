@@ -313,3 +313,42 @@
         opacity: 1;
     }
 }
+
+/* Стили для select (выбор типа пользователя) */
+select.form-control {
+    background: var(--dark-bg) !important;
+    color: var(--text-primary) !important;
+    border: none !important;
+    border-radius: 8px !important;
+    padding: 0.75rem 1rem !important;
+    cursor: pointer !important;
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    appearance: none !important;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23ffffff' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e") !important;
+    background-repeat: no-repeat !important;
+    background-position: right 1rem center !important;
+    background-size: 16px 12px !important;
+}
+
+select.form-control:focus {
+    box-shadow: none !important;
+    border-color: var(--primary-color) !important;
+    outline: none !important;
+}
+
+select.form-control option {
+    background: var(--dark-bg) !important;
+    color: var(--text-primary) !important;
+    padding: 10px !important;
+}
+
+select.form-control::-ms-expand {
+    display: none !important;
+}
+
+.form-select {
+    background: var(--dark-bg) !important;
+    border: 0px!important;
+    color: white!important;
+}

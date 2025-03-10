@@ -324,5 +324,29 @@ class LocationsController extends Api {
             $this->error($e->getMessage());
         }
     }
+
+    public function getMerchandiserLocations() {
+        try {
+            $user = $this->getUser();
+            if (!$user || $user['type'] !== 'merchandiser') {
+                throw new Exception('Доступ запрещен');
+            }
+
+            // Получаем точки, к которым привязан мерчендайзер
+            $stmt = $this->db->prepare("
+                SELECT l.* 
+                FROM locations l
+                JOIN merchandiser_locations ml ON l.id = ml.location_id
+                WHERE ml.merchandiser_id = ?
+            ");
+            $stmt->execute([$user['id']]);
+            $locations = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            $this->response(['success' => true, 'locations' => $locations]);
+
+        } catch (Exception $e) {
+            $this->error($e->getMessage());
+        }
+    }
 }
 ?> 

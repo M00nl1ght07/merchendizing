@@ -5,55 +5,50 @@ class ReportsController extends Api {
     
     public function getReports() {
         try {
-            session_start();
-            if (!isset($_SESSION['user'])) {
-                $this->error('Необходима авторизация');
+            $user = $this->getUser();
+            error_log('Текущий пользователь: ' . print_r($user, true));
+            
+            if (!$user) {
+                throw new Exception('Пользователь не авторизован');
             }
 
-            $companyId = $_SESSION['user']['company_id'];
-            
             // Получаем параметры фильтрации
             $search = $_GET['search'] ?? '';
-            $type = $_GET['type'] ?? '';
             $status = $_GET['status'] ?? '';
-            $startDate = $_GET['startDate'] ?? '';
-            $endDate = $_GET['endDate'] ?? '';
+            $dateFrom = $_GET['dateFrom'] ?? '';
+            $dateTo = $_GET['dateTo'] ?? '';
 
-            // Базовый SQL запрос с учетом существующей структуры
-            $sql = "
-                SELECT 
-                    r.id,
-                    CONCAT('Отчет по ТТ #', l.id) as name,
-                    'Ежедневный' as type,
-                    r.status,
-                    r.excel_url as file_path,
-                    r.created_at,
-                    m.name as author,
-                    r.comment,
-                    r.efficiency
-                FROM reports r
-                JOIN merchandisers m ON r.merchandiser_id = m.id
-                JOIN locations l ON r.location_id = l.id
-                WHERE m.company_id = ?
-            ";
-            $params = [$companyId];
+            // Формируем базовый SQL запрос
+            $sql = "SELECT r.*, m.name as author, l.name as location_name 
+                   FROM reports r 
+                   LEFT JOIN merchandisers m ON r.merchandiser_id = m.id 
+                   LEFT JOIN locations l ON r.location_id = l.id 
+                   WHERE 1=1";
+            $params = [];
 
             // Добавляем условия фильтрации
             if ($search) {
-                $sql .= " AND l.name LIKE ?";
+                $sql .= " AND (l.name LIKE ? OR m.name LIKE ?)";
+                $params[] = "%$search%";
                 $params[] = "%$search%";
             }
             if ($status) {
                 $sql .= " AND r.status = ?";
                 $params[] = $status;
             }
-            if ($startDate) {
+            if ($dateFrom) {
                 $sql .= " AND DATE(r.visit_date) >= ?";
-                $params[] = $startDate;
+                $params[] = $dateFrom;
             }
-            if ($endDate) {
+            if ($dateTo) {
                 $sql .= " AND DATE(r.visit_date) <= ?";
-                $params[] = $endDate;
+                $params[] = $dateTo;
+            }
+
+            // Для мерчендайзера показываем только его отчеты
+            if ($user['type'] === 'merchandiser') {
+                $sql .= " AND r.merchandiser_id = ?";
+                $params[] = $user['id'];
             }
 
             $sql .= " ORDER BY r.created_at DESC";
@@ -61,10 +56,137 @@ class ReportsController extends Api {
             $stmt = $this->db->prepare($sql);
             $stmt->execute($params);
             $reports = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            error_log('SQL запрос: ' . $sql);
+            error_log('Параметры: ' . print_r($params, true));
+            error_log('Результат запроса: ' . print_r($reports, true));
 
+            // Форматируем данные для фронтенда
+            $reports = array_map(function($report) {
+                return [
+                    'id' => $report['id'],
+                    'name' => $report['location_name'] . ' - Отчет от ' . date('d.m.Y', strtotime($report['visit_date'])),
+                    'author' => $report['author'],
+                    'created_at' => $report['created_at'],
+                    'status' => $report['status'],
+                    'excel_url' => $report['excel_url']
+                ];
+            }, $reports);
+
+            $this->response(['success' => true, 'reports' => $reports]);
+
+        } catch (Exception $e) {
+            error_log('Ошибка в getReports: ' . $e->getMessage());
+            $this->error($e->getMessage());
+        }
+    }
+
+    public function uploadReport() {
+        try {
+            $user = $this->getUser();
+            if (!$user || $user['type'] !== 'merchandiser') {
+                throw new Exception('Доступ запрещен');
+            }
+
+            // Проверяем наличие файла
+            if (!isset($_FILES['report']) || $_FILES['report']['error'] !== UPLOAD_ERR_OK) {
+                throw new Exception('Ошибка загрузки файла');
+            }
+
+            // Проверяем тип файла
+            $allowedTypes = ['application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'];
+            if (!in_array($_FILES['report']['type'], $allowedTypes)) {
+                throw new Exception('Неверный формат файла. Разрешены только Excel файлы');
+            }
+
+            // Создаем директорию для отчетов если её нет
+            $uploadDir = __DIR__ . '/../uploads/reports/';
+            if (!file_exists($uploadDir)) {
+                mkdir($uploadDir, 0777, true);
+            }
+
+            // Генерируем уникальное имя файла
+            $fileName = uniqid() . '_' . $_FILES['report']['name'];
+            $filePath = $uploadDir . $fileName;
+
+            // Перемещаем загруженный файл
+            if (!move_uploaded_file($_FILES['report']['tmp_name'], $filePath)) {
+                throw new Exception('Ошибка при сохранении файла');
+            }
+
+            // Сохраняем информацию в БД (убираем поле type из запроса)
+            $stmt = $this->db->prepare("
+                INSERT INTO reports (
+                    merchandiser_id, 
+                    location_id, 
+                    visit_date, 
+                    status, 
+                    comment, 
+                    excel_url
+                ) VALUES (?, ?, ?, 'pending', ?, ?)
+            ");
+
+            $stmt->execute([
+                $user['id'],
+                $_POST['location_id'],
+                $_POST['visit_date'],
+                $_POST['comment'] ?? null,
+                $fileName
+            ]);
+
+            $this->response(['success' => true]);
+
+        } catch (Exception $e) {
+            $this->error($e->getMessage());
+        }
+    }
+
+    public function viewReport() {
+        try {
+            $user = $this->getUser();
+            if (!$user) {
+                throw new Exception('Пользователь не авторизован');
+            }
+
+            $reportId = $_GET['report_id'] ?? null;
+            if (!$reportId) {
+                throw new Exception('ID отчета не указан');
+            }
+
+            // Получаем информацию об отчете
+            $stmt = $this->db->prepare("
+                SELECT r.*, m.name as author 
+                FROM reports r 
+                LEFT JOIN merchandisers m ON r.merchandiser_id = m.id 
+                WHERE r.id = ?
+            ");
+            $stmt->execute([$reportId]);
+            $report = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$report) {
+                throw new Exception('Отчет не найден');
+            }
+
+            // Проверяем права доступа
+            if ($user['type'] === 'merchandiser' && $report['merchandiser_id'] !== $user['id']) {
+                throw new Exception('Доступ запрещен');
+            }
+
+            // Формируем полный URL до файла
+            $fileUrl = 'https://www.merchandising-moscow.ru/uploads/reports/' . $report['excel_url'];
+
+            // Проверяем существование файла
+            if (!file_exists(__DIR__ . '/../uploads/reports/' . $report['excel_url'])) {
+                throw new Exception('Файл не найден');
+            }
+
+            // Перенаправляем на Office Online Viewer
+            $redirectUrl = "https://view.officeapps.live.com/op/embed.aspx?src=" . urlencode($fileUrl);
+            
+            // Возвращаем URL для открытия в iframe
             $this->response([
                 'success' => true,
-                'reports' => $reports
+                'viewerUrl' => $redirectUrl
             ]);
 
         } catch (Exception $e) {
@@ -72,64 +194,44 @@ class ReportsController extends Api {
         }
     }
 
-    public function uploadReport() {
+    public function approveReport() {
         try {
-            session_start();
-            if (!isset($_SESSION['user'])) {
-                $this->error('Необходима авторизация');
+            $user = $this->getUser();
+            if (!$user || $user['type'] !== 'admin') {
+                throw new Exception('Доступ запрещен');
             }
 
-            $name = $_POST['name'] ?? '';
-            $type = $_POST['type'] ?? '';
-            $comment = $_POST['comment'] ?? '';
-            $file = $_FILES['file'] ?? null;
-
-            if (!$name || !$type || !$file) {
-                $this->error('Не все поля заполнены');
+            $reportId = $_GET['report_id'] ?? null;
+            if (!$reportId) {
+                throw new Exception('ID отчета не указан');
             }
 
-            // Проверяем тип файла
-            $allowedTypes = ['application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'];
-            if (!in_array($file['type'], $allowedTypes)) {
-                $this->error('Неверный формат файла');
+            $stmt = $this->db->prepare("UPDATE reports SET status = 'approved' WHERE id = ?");
+            $stmt->execute([$reportId]);
+
+            $this->response(['success' => true]);
+
+        } catch (Exception $e) {
+            $this->error($e->getMessage());
+        }
+    }
+
+    public function rejectReport() {
+        try {
+            $user = $this->getUser();
+            if (!$user || $user['type'] !== 'admin') {
+                throw new Exception('Доступ запрещен');
             }
 
-            // Создаем директорию для отчетов если её нет
-            $uploadDir = '../uploads/reports/' . $_SESSION['user']['company_id'] . '/';
-            if (!file_exists($uploadDir)) {
-                mkdir($uploadDir, 0777, true);
+            $reportId = $_GET['report_id'] ?? null;
+            if (!$reportId) {
+                throw new Exception('ID отчета не указан');
             }
 
-            // Генерируем уникальное имя файла
-            $fileName = uniqid() . '_' . $file['name'];
-            $filePath = $uploadDir . $fileName;
+            $stmt = $this->db->prepare("UPDATE reports SET status = 'rejected' WHERE id = ?");
+            $stmt->execute([$reportId]);
 
-            // Загружаем файл
-            if (!move_uploaded_file($file['tmp_name'], $filePath)) {
-                $this->error('Ошибка при загрузке файла');
-            }
-
-            // Сохраняем информацию в БД
-            $stmt = $this->db->prepare("
-                INSERT INTO reports (
-                    company_id, user_id, name, type, 
-                    file_path, comment, status
-                ) VALUES (?, ?, ?, ?, ?, ?, 'new')
-            ");
-            
-            $stmt->execute([
-                $_SESSION['user']['company_id'],
-                $_SESSION['user']['id'],
-                $name,
-                $type,
-                'uploads/reports/' . $_SESSION['user']['company_id'] . '/' . $fileName,
-                $comment
-            ]);
-
-            $this->response([
-                'success' => true,
-                'message' => 'Отчет успешно загружен'
-            ]);
+            $this->response(['success' => true]);
 
         } catch (Exception $e) {
             $this->error($e->getMessage());
@@ -138,46 +240,34 @@ class ReportsController extends Api {
 
     public function deleteReport() {
         try {
-            session_start();
-            if (!isset($_SESSION['user'])) {
-                $this->error('Необходима авторизация');
+            $user = $this->getUser();
+            if (!$user || $user['type'] !== 'admin') {
+                throw new Exception('Доступ запрещен');
             }
 
             $reportId = $_POST['report_id'] ?? null;
             if (!$reportId) {
-                $this->error('ID отчета не указан');
+                throw new Exception('ID отчета не указан');
             }
 
-            // Получаем информацию о файле
-            $stmt = $this->db->prepare("
-                SELECT file_path 
-                FROM reports 
-                WHERE id = ? AND company_id = ?
-            ");
-            $stmt->execute([$reportId, $_SESSION['user']['company_id']]);
+            // Получаем информацию о файле перед удалением
+            $stmt = $this->db->prepare("SELECT excel_url FROM reports WHERE id = ?");
+            $stmt->execute([$reportId]);
             $report = $stmt->fetch(PDO::FETCH_ASSOC);
 
-            if (!$report) {
-                $this->error('Отчет не найден');
-            }
-
-            // Удаляем файл
-            $filePath = '../' . $report['file_path'];
-            if (file_exists($filePath)) {
-                unlink($filePath);
+            if ($report) {
+                // Удаляем физический файл
+                $filePath = __DIR__ . '/../uploads/reports/' . $report['excel_url'];
+                if (file_exists($filePath)) {
+                    unlink($filePath);
+                }
             }
 
             // Удаляем запись из БД
-            $stmt = $this->db->prepare("
-                DELETE FROM reports 
-                WHERE id = ? AND company_id = ?
-            ");
-            $stmt->execute([$reportId, $_SESSION['user']['company_id']]);
+            $stmt = $this->db->prepare("DELETE FROM reports WHERE id = ?");
+            $stmt->execute([$reportId]);
 
-            $this->response([
-                'success' => true,
-                'message' => 'Отчет успешно удален'
-            ]);
+            $this->response(['success' => true]);
 
         } catch (Exception $e) {
             $this->error($e->getMessage());

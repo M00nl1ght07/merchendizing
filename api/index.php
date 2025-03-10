@@ -119,6 +119,15 @@ try {
                 case 'uploadReport':
                     $reports->uploadReport();
                     break;
+                case 'viewReport':
+                    $reports->viewReport();
+                    break;
+                case 'approveReport':
+                    $reports->approveReport();
+                    break;
+                case 'rejectReport':
+                    $reports->rejectReport();
+                    break;
                 case 'deleteReport':
                     $reports->deleteReport();
                     break;
@@ -171,6 +180,9 @@ try {
                     break;
                 case 'updateLocationMerchandisers':
                     $locations->updateLocationMerchandisers();
+                    break;
+                case 'getMerchandiserLocations':
+                    $locations->getMerchandiserLocations();
                     break;
                 default:
                     throw new Exception('Неизвестное действие');

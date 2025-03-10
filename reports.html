@@ -39,34 +39,26 @@
                                 <i class="fa fa-plus"></i> Загрузить отчет
                             </button>
                         </div>
-                        
-                        <!-- Фильтры -->
-                        <div class="reports-filters mb-4">
-                            <div class="row g-3">
-                                <div class="col-md-3">
-                                    <input type="text" class="form-control" placeholder="Поиск по названию...">
-                                </div>
-                                <div class="col-md-2">
-                                    <select class="form-select">
-                                        <option value="">Тип отчета</option>
-                                        <option>Ежедневный</option>
-                                        <option>Еженедельный</option>
-                                        <option>Месячный</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-2">
-                                    <select class="form-select">
-                                        <option value="">Статус</option>
-                                        <option>Новый</option>
-                                        <option>Проверен</option>
-                                        <option>Требует правок</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-3">
-                                    <div class="input-group">
-                                        <input type="date" class="form-control">
-                                        <input type="date" class="form-control">
-                                    </div>
+                    </div>
+
+                    <!-- Фильтры -->
+                    <div class="reports-filters mb-4">
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <input type="text" class="form-control" placeholder="Поиск по названию...">
+                            </div>
+                            <div class="col-md-2">
+                                <select name="status" class="form-select">
+                                    <option value="">Все статусы</option>
+                                    <option value="pending">На проверке</option>
+                                    <option value="approved">Одобрен</option>
+                                    <option value="rejected">Отклонен</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="input-group">
+                                    <input type="date" name="dateFrom" class="form-control">
+                                    <input type="date" name="dateTo" class="form-control">
                                 </div>
                             </div>
                         </div>
@@ -79,7 +71,6 @@
                                 <thead>
                                     <tr>
                                         <th>Название</th>
-                                        <th>Тип</th>
                                         <th>Автор</th>
                                         <th>Дата создания</th>
                                         <th>Статус</th>
@@ -87,32 +78,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr>
-                                        <td>
-                                            <div class="report-name">
-                                                <i class="fa fa-file-excel-o"></i>
-                                                <span>Отчет по ТЦ "Центральный"</span>
-                                            </div>
-                                        </td>
-                                        <td>Ежедневный</td>
-                                        <td>Анна Смирнова</td>
-                                        <td>06.03.2024</td>
-                                        <td><span class="badge bg-success">Проверен</span></td>
-                                        <td>
-                                            <div class="actions">
-                                                <button class="btn btn-icon" title="Просмотреть">
-                                                    <i class="fa fa-eye"></i>
-                                                </button>
-                                                <button class="btn btn-icon" title="Скачать">
-                                                    <i class="fa fa-download"></i>
-                                                </button>
-                                                <button class="btn btn-icon" title="Удалить">
-                                                    <i class="fa fa-trash"></i>
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    <!-- Другие строки таблицы -->
+                                    <!-- Данные будут загружаться динамически -->
                                 </tbody>
                             </table>
                         </div>
@@ -123,42 +89,39 @@
     </div>
 
     <!-- Модальное окно загрузки отчета -->
-    <div class="modal fade" id="uploadReportModal">
+    <div class="modal fade" id="uploadReportModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Загрузка отчета</h5>
+                    <h5 class="modal-title">Загрузить отчет</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body">
-                    <form id="uploadReportForm">
+                <form id="uploadReportForm">
+                    <div class="modal-body">
                         <div class="mb-3">
-                            <label class="form-label">Название отчета</label>
-                            <input type="text" class="form-control" required>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Тип отчета</label>
-                            <select class="form-select" required>
-                                <option value="">Выберите тип</option>
-                                <option>Ежедневный</option>
-                                <option>Еженедельный</option>
-                                <option>Месячный</option>
+                            <label class="form-label">Точка продаж</label>
+                            <select name="location_id" class="form-select" required>
+                                <!-- Опции будут загружены динамически -->
                             </select>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Файл отчета</label>
-                            <input type="file" class="form-control" accept=".xlsx,.xls" required>
+                            <label class="form-label">Дата посещения</label>
+                            <input type="date" name="visit_date" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Excel файл</label>
+                            <input type="file" name="report" class="form-control" accept=".xls,.xlsx" required>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Комментарий</label>
-                            <textarea class="form-control" rows="3"></textarea>
+                            <textarea name="comment" class="form-control" rows="3"></textarea>
                         </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-                    <button type="submit" form="uploadReportForm" class="btn btn-primary">Загрузить</button>
-                </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                        <button type="submit" class="btn btn-primary">Загрузить</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>

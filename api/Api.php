@@ -6,6 +6,15 @@ class Api {
         $this->db = $db;
     }
     
+    // Добавляем метод получения пользователя
+    protected function getUser() {
+        session_start();
+        if (!isset($_SESSION['user'])) {
+            return null;
+        }
+        return $_SESSION['user'];
+    }
+    
     protected function response($data, $status = 200) {
         header('Access-Control-Allow-Origin: *');
         header('Access-Control-Allow-Methods: GET, POST, OPTIONS');

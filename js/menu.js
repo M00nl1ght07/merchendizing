@@ -5,7 +5,6 @@ const menuItems = {
         { href: 'reports.html', icon: 'file-text', text: 'Отчеты' },
         { href: 'merchandisers.html', icon: 'users', text: 'Мерчендайзеры' },
         { href: 'locations.html', icon: 'map-marker', text: 'Точки продаж' },
-        { href: 'analytics.html', icon: 'line-chart', text: 'Аналитика' },
         { href: 'settings.html', icon: 'cog', text: 'Настройки' }
     ],
     merchandiser: [

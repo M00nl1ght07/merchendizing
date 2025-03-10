@@ -175,4 +175,49 @@ function formatNotificationTime(timestamp) {
 function formatDate(timestamp) {
     const date = new Date(timestamp);
     return date.toLocaleDateString();
+}
+
+// Функция для загрузки бокового меню
+function loadSidebar() {
+    return `
+        <div class="sidebar-header">
+            <a href="dashboard.html" class="brand-link">
+                <h1 class="brand-title">MC</h1>
+            </a>
+        </div>
+        <nav class="sidebar-nav">
+            <ul>
+                <li>
+                    <a href="dashboard.html">
+                        <i class="fa fa-dashboard"></i>
+                        <span>Дашборд</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="reports.html">
+                        <i class="fa fa-file-text"></i>
+                        <span>Отчеты</span>
+                    </a>
+                </li>
+                <li class="admin-only">
+                    <a href="merchandisers.html">
+                        <i class="fa fa-users"></i>
+                        <span>Мерчандайзеры</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="locations.html">
+                        <i class="fa fa-map-marker"></i>
+                        <span>Точки продаж</span>
+                    </a>
+                </li>
+                <li class="admin-only">
+                    <a href="settings.html">
+                        <i class="fa fa-cog"></i>
+                        <span>Настройки</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    `;
 } 

@@ -164,3 +164,7 @@
         grid-template-columns: 1fr;
     }
 } 
+
+.text-muted {
+    color: white!important;
+}

@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         const user = JSON.parse(localStorage.getItem('user'));
         if (!user) throw new Error('Пользователь не авторизован');
 
-        // Загружаем данные профиля в зависимости от типа пользователя
+        // Загружаем данные профиля
         const response = await fetch(`api/index.php?controller=profile&action=getProfile&type=${user.type}`);
         const data = await response.json();
 
@@ -13,60 +13,83 @@ document.addEventListener('DOMContentLoaded', async function() {
 
         const profile = data.profile;
 
-        // Заполняем общие поля профиля
+        // Заполняем данные профиля
         document.querySelector('.profile-name').textContent = profile.name;
-        // Изменяем отображение роли на русском языке
-        const roleText = user.type === 'admin' ? 'Администратор' : 'Мерчендайзер';
-        document.querySelector('.profile-role').textContent = roleText;
-        document.querySelector('.profile-company').textContent = profile.company_name;
+        document.querySelector('.profile-role').textContent = user.type === 'admin' ? 'Администратор' : 'Мерчендайзер';
+        document.querySelector('input[name="company"]').value = profile.company_name;
+
+        // Заполняем форму
+        document.querySelector('input[name="name"]').value = profile.name;
+        document.querySelector('input[name="email"]').value = profile.email;
         
-        // Устанавливаем аватар
-        const avatarImg = document.querySelector('.profile-image img');
-        if (avatarImg) {
-            avatarImg.src = profile.avatar_url || 'images/avatar.png';
+        // Инициализация маски для телефона
+        const phoneInput = document.querySelector('input[name="phone"]');
+        if (phoneInput) {
+            const phoneMask = IMask(phoneInput, {
+                mask: '+{7} ({9}00) 000-00-00',
+                lazy: false
+            });
+            
+            if (profile.phone) {
+                phoneMask.value = profile.phone;
+            }
         }
 
-        // Заполняем форму профиля
+        // Аватар
+        const profileImage = document.getElementById('profileImage');
+        if (profileImage && profile.avatar_url) {
+            profileImage.src = profile.avatar_url;
+        }
+
+        // Обработчик клика по кнопке изменения фото
+        const changePhotoBtn = document.querySelector('.change-photo-btn');
+        if (changePhotoBtn) {
+            changePhotoBtn.addEventListener('click', function() {
+                document.getElementById('avatarUpload').click();
+            });
+        }
+
+        // Обработчик загрузки аватара
+        const avatarUpload = document.getElementById('avatarUpload');
+        if (avatarUpload) {
+            avatarUpload.addEventListener('change', async function(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                const formData = new FormData();
+                formData.append('avatar', file);
+
+                try {
+                    const response = await fetch('api/index.php?controller=profile&action=updateAvatar', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const data = await response.json();
+                    if (!data.success) {
+                        throw new Error(data.error);
+                    }
+
+                    // Обновляем аватар на странице
+                    const profileImage = document.getElementById('profileImage');
+                    if (profileImage) {
+                        profileImage.src = data.avatar_url;
+                    }
+                    showNotification('Аватар успешно обновлен');
+                } catch (error) {
+                    console.error('Ошибка при обновлении аватара:', error);
+                    showNotification(error.message, 'error');
+                }
+            });
+        }
+
+        // Обработчик формы профиля
         const profileForm = document.getElementById('profileForm');
         if (profileForm) {
-            profileForm.querySelector('input[name="name"]').value = profile.name;
-            profileForm.querySelector('input[name="email"]').value = profile.email;
-            
-            // Инициализация маски для телефона
-            const phoneInput = profileForm.querySelector('input[name="phone"]');
-            if (phoneInput) {
-                const phoneMask = IMask(phoneInput, {
-                    mask: '+{7} ({9}00) 000-00-00',
-                    lazy: false
-                });
-                
-                // Устанавливаем значение телефона
-                if (profile.phone) {
-                    phoneMask.value = profile.phone;
-                }
-            }
-
-            // Дополнительные поля для мерчендайзера
-            if (user.type === 'merchandiser') {
-                const regionInput = profileForm.querySelector('input[name="region"]');
-                if (regionInput) {
-                    regionInput.value = profile.region || '';
-                }
-            }
-
-            // Обработчик формы обновления профиля
             profileForm.addEventListener('submit', async function(e) {
                 e.preventDefault();
                 try {
-                    const formData = new FormData(profileForm);
-                    
-                    // Проверяем формат телефона
-                    const phone = formData.get('phone');
-                    const phoneRegex = /^\+7 \(\d{3}\) \d{3}-\d{2}-\d{2}$/;
-                    if (!phoneRegex.test(phone)) {
-                        throw new Error('Неверный формат телефона');
-                    }
-
+                    const formData = new FormData(this);
                     formData.append('type', user.type);
 
                     const response = await fetch('api/index.php?controller=profile&action=updateProfile', {
@@ -82,6 +105,48 @@ document.addEventListener('DOMContentLoaded', async function() {
                     showNotification('Профиль успешно обновлен');
                 } catch (error) {
                     console.error('Ошибка при обновлении профиля:', error);
+                    showNotification(error.message, 'error');
+                }
+            });
+        }
+
+        // Обработчик формы безопасности
+        const securityForm = document.getElementById('securityForm');
+        if (securityForm) {
+            securityForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const formData = new FormData(this);
+                const newPassword = formData.get('newPassword');
+                const confirmPassword = formData.get('confirmPassword');
+
+                // Проверяем совпадение паролей
+                if (newPassword !== confirmPassword) {
+                    showNotification('Пароли не совпадают', 'error');
+                    return;
+                }
+
+                // Проверяем длину пароля
+                if (newPassword.length < 6) {
+                    showNotification('Пароль должен содержать минимум 6 символов', 'error');
+                    return;
+                }
+
+                try {
+                    const response = await fetch('api/index.php?controller=profile&action=updatePassword', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const data = await response.json();
+                    if (!data.success) {
+                        throw new Error(data.error);
+                    }
+
+                    showNotification('Пароль успешно изменен');
+                    this.reset();
+                } catch (error) {
+                    console.error('Ошибка при изменении пароля:', error);
                     showNotification(error.message, 'error');
                 }
             });

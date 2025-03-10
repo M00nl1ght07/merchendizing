@@ -18,7 +18,7 @@ async function checkAuth() {
 
         // Если мерчендайзер пытается зайти на недоступные страницы - редиректим на дашборд
         if (user.type === 'merchandiser') {
-            const allowedPages = ['dashboard.html', 'reports.html', 'locations.html', 'profile.html'];
+            const allowedPages = ['dashboard.html', 'reports.html', 'locations.html', 'profile.html', 'settings.html'];
             const currentPage = window.location.pathname.split('/').pop();
             
             if (!allowedPages.includes(currentPage)) {
@@ -55,7 +55,7 @@ function checkPermission(page) {
     
     // Страницы, доступные для мерчендайзера
     if (user.type === 'merchandiser') {
-        const allowedPages = ['dashboard.html', 'reports.html', 'locations.html', 'profile.html'];
+        const allowedPages = ['dashboard.html', 'reports.html', 'locations.html', 'profile.html', 'settings.html'];
         return allowedPages.includes(page.toLowerCase());
     }
     
@@ -77,10 +77,17 @@ async function checkPageAccess() {
     // Проверяем доступ к текущей странице
     if (!checkPermission(currentPage)) {
         showNotification('У вас нет доступа к этой странице', 'error');
-        if (user.type === 'merchandiser') {
-            window.location.href = 'profile.html';
-        }
+        window.location.href = 'dashboard.html';
         return false;
+    }
+
+    // Страницы, доступные только админам
+    const adminOnlyPages = ['merchandisers.html', 'analytics.html'];
+
+    // Если страница только для админов и пользователь не админ
+    if (adminOnlyPages.includes(currentPage) && user.type !== 'admin') {
+        window.location.href = 'dashboard.html';
+        return;
     }
 
     return true;
@@ -134,7 +141,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             const link = el.querySelector('a');
             if (link) {
                 const href = link.getAttribute('href');
-                const allowedPages = ['dashboard.html', 'reports.html', 'locations.html', 'profile.html'];
+                const allowedPages = ['dashboard.html', 'reports.html', 'locations.html', 'profile.html', 'settings.html'];
                 if (!allowedPages.includes(href)) {
                     el.style.display = 'none';
                 }

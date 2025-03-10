@@ -11,7 +11,8 @@ const menuItems = {
     merchandiser: [
         { href: 'dashboard.html', icon: 'dashboard', text: 'Дашборд' },
         { href: 'reports.html', icon: 'file-text', text: 'Отчеты' },
-        { href: 'locations.html', icon: 'map-marker', text: 'Точки продаж' }
+        { href: 'locations.html', icon: 'map-marker', text: 'Точки продаж' },
+        { href: 'settings.html', icon: 'cog', text: 'Настройки' }
     ]
 };
 

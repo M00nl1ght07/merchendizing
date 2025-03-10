@@ -12,7 +12,6 @@
 </head>
 <body class="dark-theme">
     <div class="dashboard-container">
-        <!-- Боковое меню (такое же как в dashboard.html) -->
         <aside class="sidebar">
             <div class="sidebar-header">
                 <a href="dashboard.html" class="brand-link">
@@ -21,48 +20,12 @@
             </div>
             <nav class="sidebar-nav">
                 <ul>
-                    <li>
-                        <a href="dashboard.html">
-                            <i class="fa fa-dashboard"></i>
-                            <span>Дашборд</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="reports.html">
-                            <i class="fa fa-file-text"></i>
-                            <span>Отчеты</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="merchandisers.html">
-                            <i class="fa fa-users"></i>
-                            <span>Мерчандайзеры</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="locations.html">
-                            <i class="fa fa-map-marker"></i>
-                            <span>Точки продаж</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="analytics.html">
-                            <i class="fa fa-line-chart"></i>
-                            <span>Аналитика</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="settings.html">
-                            <i class="fa fa-cog"></i>
-                            <span>Настройки</span>
-                        </a>
-                    </li>
+                    <!-- Меню будет сгенерировано через JavaScript -->
                 </ul>
             </nav>
         </aside>
 
         <main class="main-content">
-            <!-- Подключаем общий компонент верхней панели -->
             <div id="header-component"></div>
 
             <div class="container-fluid">
@@ -75,10 +38,11 @@
                                     <img src="images/avatar.png" alt="Profile" class="profile-image" id="profileImage">
                                     <button class="change-photo-btn">
                                         <i class="fa fa-camera"></i>
+                                        <input type="file" id="avatarUpload" accept="image/*" style="display: none;">
                                     </button>
                                 </div>
-                                <h4 id="profileName"></h4>
-                                <p id="profileRole" class="text-muted"></p>
+                                <h4 class="profile-name"></h4>
+                                <p class="profile-role text-muted"></p>
                             </div>
                             <div class="profile-info">
                                 <!-- Информация будет добавлена через JavaScript -->
@@ -89,7 +53,7 @@
                         <div class="dashboard-card mt-4">
                             <div class="dashboard-card-header">
                                 <h5>Активность</h5>
-                            </div>
+                            </div>W
                             <div class="dashboard-card-body">
                                 <div class="row g-3">
                                     <div class="col-4 text-center">
@@ -179,11 +143,8 @@
         </main>
     </div>
 
-    <!-- Сначала подключаем все библиотеки -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://unpkg.com/imask"></script>
-
-    <!-- Потом наши скрипты -->
     <script src="js/auth.js"></script>
     <script src="js/components.js"></script>
     <script src="js/menu.js"></script>

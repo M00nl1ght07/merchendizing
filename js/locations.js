@@ -27,196 +27,122 @@ const cityCoordinates = {
     }
 };
 
-// Объявляем loadLocations в глобальной области видимости
-let loadLocations;
-
-// Глобальная переменная для хранения текущей точки
-let currentLocationId = null;
+// Глобальные переменные
+let map;
+let markers = [];
+let currentLocationId;
 
 document.addEventListener('DOMContentLoaded', async function() {
-    // Проверяем авторизацию
-    const user = await checkAuth();
-    if (!user) return;
+    try {
+        const user = JSON.parse(localStorage.getItem('user'));
+        if (!user) throw new Error('Пользователь не авторизован');
 
-    // Инициализация карты
-    const map = L.map('map', {
-        zoomControl: false // Отключаем стандартные контролы зума
-    }).setView([55.7558, 37.6173], 10);
-
-    // Добавляем темную тему для карты
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors'
-    }).addTo(map);
-
-    // Определяем функцию loadLocations
-    loadLocations = async function() {
-        try {
-            const searchValue = document.querySelector('input[placeholder="Поиск по названию..."]').value;
-            const regionValue = document.querySelector('select.form-select').value;
-            
-            const params = new URLSearchParams({
-                search: searchValue,
-                region: regionValue
-            });
-
-            const response = await fetch(`api/index.php?controller=locations&action=getLocations&${params}`);
-            const data = await response.json();
-
-            if (!data.success) {
-                throw new Error(data.error);
+        // Скрываем кнопки для мерчендайзера
+        if (user.type === 'merchandiser') {
+            const addButton = document.querySelector('.btn-add-location');
+            if (addButton) {
+                addButton.style.display = 'none';
             }
-
-            // Очищаем существующие маркеры
-            map.eachLayer((layer) => {
-                if (layer instanceof L.Marker) {
-                    map.removeLayer(layer);
-                }
+            document.querySelectorAll('.location-actions').forEach(el => {
+                el.style.display = 'none';
             });
-
-            // Добавляем маркеры на карту
-            data.locations.forEach(location => {
-                const marker = L.marker([location.latitude, location.longitude])
-                    .addTo(map)
-                    .bindPopup(`
-                        <strong>${location.name}</strong><br>
-                        ${location.address}<br>
-                        Мерчендайзеров: ${location.merchandisers_count}<br>
-                        Эффективность: ${location.efficiency}%
-                    `);
-            });
-
-            // Обновляем список точек
-            const locationsList = document.querySelector('.locations-list');
-            if (locationsList) {
-                locationsList.innerHTML = data.locations.map(location => `
-                    <div class="location-item">
-                        <div class="location-info">
-                            <h5>${location.name}</h5>
-                            <p>${location.address}</p>
-                            <div class="location-stats">
-                                <span><i class="fa fa-user"></i> ${location.merchandisers_count} мерчендайзеров</span>
-                                <span><i class="fa fa-file-text"></i> ${location.reports_count} отчетов</span>
-                                <span><i class="fa fa-check-circle"></i> ${Math.round(location.efficiency)}% эффективность</span>
-                            </div>
-                        </div>
-                        <div class="location-actions">
-                            <button class="btn btn-icon" onclick="manageMerchandisers(${location.id})" title="Управление мерчендайзерами">
-                                <i class="fa fa-users"></i>
-                            </button>
-                            <button class="btn btn-icon" onclick="editLocation(${location.id})" title="Редактировать">
-                                <i class="fa fa-pencil"></i>
-                            </button>
-                            <button class="btn btn-icon" onclick="deleteLocation(${location.id}, '${location.name}')" title="Удалить">
-                                <i class="fa fa-trash"></i>
-                            </button>
-                        </div>
-                    </div>
-                `).join('');
-            }
-
-        } catch (error) {
-            console.error('Ошибка при загрузке точек:', error);
-            showNotification(error.message, 'error');
         }
-    };
 
-    // Загружаем точки при загрузке страницы
-    loadLocations();
+        // Инициализируем карту
+        map = L.map('map').setView([55.7558, 37.6173], 10);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
 
-    // Обработчики поиска и фильтрации
-    const searchInput = document.querySelector('input[placeholder="Поиск по названию..."]');
-    const regionSelect = document.querySelector('select.form-select');
+        // Добавляем обработчик изменения региона
+        const regionSelect = document.querySelector('select.form-select');
+        if (regionSelect) {
+            regionSelect.addEventListener('change', async function() {
+                const selectedRegion = this.value;
+                await updateMap(selectedRegion);
+            });
+        }
 
-    if (searchInput) {
-        searchInput.addEventListener('input', debounce(() => loadLocations(), 500));
-    }
-    if (regionSelect) {
-        regionSelect.addEventListener('change', () => {
-            const selectedRegion = regionSelect.value.toLowerCase();
-            if (cityCoordinates[selectedRegion]) {
-                map.setView(
-                    cityCoordinates[selectedRegion].center,
-                    cityCoordinates[selectedRegion].zoom
-                );
-            }
-            loadLocations();
-        });
-    }
+        // Загружаем точки при старте
+        await updateMap();
 
-    // Обработчик формы добавления точки
-    const addForm = document.getElementById('addLocationForm');
-    if (addForm) {
-        addForm.addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            const formData = new FormData(this);
-            
-            try {
-                const response = await fetch('api/index.php?controller=locations&action=addLocation', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                const data = await response.json();
-                
-                if (!data.success) {
-                    throw new Error(data.error);
-                }
-
-                // Закрываем модальное окно
-                const modal = bootstrap.Modal.getInstance(document.getElementById('addLocationModal'));
-                modal.hide();
-                
-                // Очищаем форму
-                this.reset();
-                document.getElementById('coordinatesInput').value = ''; // Очищаем поле координат
-                
-                // Перезагружаем точки
-                await loadLocations();
-                showNotification('Точка продаж успешно добавлена');
-
-            } catch (error) {
-                console.error('Ошибка при добавлении точки:', error);
-                showNotification(error.message, 'error');
-            }
-        });
-    }
-
-    // Обработчик формы редактирования
-    const editForm = document.getElementById('editLocationForm');
-    if (editForm) {
-        editForm.addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            const formData = new FormData(this);
-            
-            try {
-                const response = await fetch('api/index.php?controller=locations&action=updateLocation', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                const data = await response.json();
-                
-                if (!data.success) {
-                    throw new Error(data.error);
-                }
-
-                // Закрываем модальное окно
-                const modal = bootstrap.Modal.getInstance(document.getElementById('editLocationModal'));
-                modal.hide();
-                
-                // Перезагружаем точки
-                await loadLocations();
-                showNotification('Точка продаж успешно обновлена');
-
-            } catch (error) {
-                console.error('Ошибка при обновлении точки:', error);
-                showNotification(error.message, 'error');
-            }
-        });
+    } catch (error) {
+        console.error('Ошибка:', error);
+        showNotification(error.message, 'error');
     }
 });
+
+// Функция обновления карты и списка точек
+async function updateMap(region = '') {
+    try {
+        // Очищаем существующие маркеры
+        markers.forEach(marker => map.removeLayer(marker));
+        markers = [];
+
+        // Формируем URL с учетом фильтра по региону
+        let url = 'api/index.php?controller=locations&action=getLocations';
+        if (region && region !== 'Все регионы') {
+            url += `&region=${encodeURIComponent(region)}`;
+        }
+
+        const response = await fetch(url);
+        const data = await response.json();
+
+        if (!data.success) {
+            throw new Error(data.error || 'Ошибка загрузки точек продаж');
+        }
+
+        // Обновляем список и маркеры
+        const locationsList = document.querySelector('.locations-list');
+        if (!locationsList) {
+            throw new Error('Элемент списка точек не найден');
+        }
+
+        locationsList.innerHTML = data.locations.map(location => {
+            // Добавляем маркер на карту
+            const marker = L.marker([location.latitude, location.longitude])
+                .addTo(map)
+                .bindPopup(`
+                    <strong>${location.name}</strong><br>
+                    ${location.address}
+                `);
+            markers.push(marker);
+
+            // Возвращаем HTML для списка
+            return `
+                <div class="location-item" data-id="${location.id}">
+                    <div class="location-info">
+                        <h6>${location.name}</h6>
+                        <p class="address"><i class="fa fa-map-marker"></i> ${location.address}</p>
+                        <div class="location-stats">
+                            <span><i class="fa fa-user"></i> ${location.merchandisers_count}</span>
+                            <span><i class="fa fa-file-text"></i> ${location.reports_count}</span>
+                            <span><i class="fa fa-line-chart"></i> ${Math.round(location.efficiency)}%</span>
+                        </div>
+                    </div>
+                    <div class="location-actions">
+                        <button class="btn btn-sm btn-primary" onclick="editLocation(${location.id})">
+                            <i class="fa fa-edit"></i>
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteLocation(${location.id}, '${location.name}')">
+                            <i class="fa fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        // Центрируем карту по маркерам
+        if (markers.length > 0) {
+            const group = L.featureGroup(markers);
+            map.fitBounds(group.getBounds());
+        }
+
+    } catch (error) {
+        console.error('Ошибка:', error);
+        showNotification(error.message, 'error');
+    }
+}
 
 // Функция редактирования точки
 async function editLocation(id) {
@@ -241,10 +167,6 @@ async function editLocation(id) {
         const modal = new bootstrap.Modal(document.getElementById('editLocationModal'));
         modal.show();
 
-        // После заполнения формы добавим:
-        const coordinates = `${data.location.latitude}, ${data.location.longitude}`;
-        form.querySelector('#coordinatesInput').value = coordinates;
-
     } catch (error) {
         console.error('Ошибка при загрузке данных точки:', error);
         showNotification(error.message, 'error');
@@ -262,13 +184,51 @@ async function deleteLocation(id, name) {
                 throw new Error(data.error);
             }
 
-            await loadLocations();
+            await updateMap();
             showNotification('Точка продаж успешно удалена');
 
         } catch (error) {
             console.error('Ошибка при удалении точки:', error);
             showNotification(error.message, 'error');
         }
+    }
+}
+
+// Функция сохранения назначенных мерчендайзеров
+async function saveMerchandisers() {
+    try {
+        const modal = document.getElementById('manageMerchandisersModal');
+        const checkedMerchandisers = Array.from(modal.querySelectorAll('input[type="checkbox"]:checked'))
+            .map(cb => cb.value);
+
+        const response = await fetch('api/index.php?controller=locations&action=updateLocationMerchandisers', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                location_id: currentLocationId,
+                merchandiser_ids: checkedMerchandisers
+            })
+        });
+
+        const data = await response.json();
+
+        if (!data.success) {
+            throw new Error(data.error);
+        }
+
+        // Закрываем модальное окно
+        const modalInstance = bootstrap.Modal.getInstance(modal);
+        modalInstance.hide();
+
+        // Обновляем список точек
+        await updateMap();
+        showNotification('Мерчендайзеры успешно обновлены');
+
+    } catch (error) {
+        console.error('Ошибка при сохранении мерчендайзеров:', error);
+        showNotification(error.message, 'error');
     }
 }
 
@@ -347,44 +307,6 @@ async function manageMerchandisers(locationId) {
 
     } catch (error) {
         console.error('Ошибка при загрузке мерчендайзеров:', error);
-        showNotification(error.message, 'error');
-    }
-}
-
-// Функция сохранения назначенных мерчендайзеров
-async function saveMerchandisers() {
-    try {
-        const modal = document.getElementById('manageMerchandisersModal');
-        const checkedMerchandisers = Array.from(modal.querySelectorAll('input[type="checkbox"]:checked'))
-            .map(cb => cb.value);
-
-        const response = await fetch('api/index.php?controller=locations&action=updateLocationMerchandisers', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                location_id: currentLocationId,
-                merchandiser_ids: checkedMerchandisers
-            })
-        });
-
-        const data = await response.json();
-
-        if (!data.success) {
-            throw new Error(data.error);
-        }
-
-        // Закрываем модальное окно
-        const modalInstance = bootstrap.Modal.getInstance(modal);
-        modalInstance.hide();
-
-        // Обновляем список точек
-        await loadLocations();
-        showNotification('Мерчендайзеры успешно обновлены');
-
-    } catch (error) {
-        console.error('Ошибка при сохранении мерчендайзеров:', error);
         showNotification(error.message, 'error');
     }
 } 

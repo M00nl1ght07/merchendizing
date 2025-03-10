@@ -5,31 +5,47 @@ class LocationsController extends Api {
     
     public function getLocations() {
         try {
-            session_start();
             if (!isset($_SESSION['user'])) {
                 $this->error('Необходима авторизация');
             }
 
-            $companyId = $_SESSION['user']['company_id'];
+            $user = $_SESSION['user'];
+            $companyId = $user['company_id'];
             
             // Получаем параметры фильтрации
             $search = $_GET['search'] ?? '';
             $region = $_GET['region'] ?? '';
 
             // Базовый SQL запрос
-            $sql = "
-                SELECT 
-                    l.*,
-                    COUNT(DISTINCT m.id) as merchandisers_count,
-                    COUNT(DISTINCT r.id) as reports_count,
-                    COALESCE(AVG(r.efficiency), 0) as efficiency
-                FROM locations l
-                LEFT JOIN merchandiser_locations ml ON l.id = ml.location_id
-                LEFT JOIN merchandisers m ON ml.merchandiser_id = m.id
-                LEFT JOIN reports r ON l.id = r.location_id
-                WHERE l.company_id = ?
-            ";
-            $params = [$companyId];
+            if ($user['type'] === 'merchandiser') {
+                // Для мерчендайзера - только его точки
+                $sql = "
+                    SELECT l.*,
+                        COUNT(DISTINCT m.id) as merchandisers_count,
+                        COUNT(DISTINCT r.id) as reports_count,
+                        COALESCE(AVG(r.efficiency), 0) as efficiency
+                    FROM locations l
+                    LEFT JOIN merchandiser_locations ml ON l.id = ml.location_id
+                    LEFT JOIN merchandisers m ON ml.merchandiser_id = m.id
+                    LEFT JOIN reports r ON l.id = r.location_id
+                    WHERE l.company_id = ? AND ml.merchandiser_id = ?
+                ";
+                $params = [$companyId, $user['id']];
+            } else {
+                // Для админа - все точки компании
+                $sql = "
+                    SELECT l.*,
+                        COUNT(DISTINCT m.id) as merchandisers_count,
+                        COUNT(DISTINCT r.id) as reports_count,
+                        COALESCE(AVG(r.efficiency), 0) as efficiency
+                    FROM locations l
+                    LEFT JOIN merchandiser_locations ml ON l.id = ml.location_id
+                    LEFT JOIN merchandisers m ON ml.merchandiser_id = m.id
+                    LEFT JOIN reports r ON l.id = r.location_id
+                    WHERE l.company_id = ?
+                ";
+                $params = [$companyId];
+            }
 
             if ($search) {
                 $sql .= " AND (l.name LIKE ? OR l.address LIKE ?)";

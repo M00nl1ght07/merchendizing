@@ -213,3 +213,48 @@
     margin-top: 0.5rem;
     color: var(--text-secondary);
 }
+
+/* Стили для списка мерчендайзеров */
+.merchandisers-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.merchandiser-item {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem;
+    border-radius: 8px;
+    background: var(--dark-bg);
+    margin-bottom: 0.5rem;
+}
+
+.merchandiser-item:last-child {
+    margin-bottom: 0;
+}
+
+.merchandiser-checkbox {
+    margin-right: 1rem;
+}
+
+.merchandiser-info {
+    flex: 1;
+}
+
+.merchandiser-info h6 {
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+.merchandiser-info p {
+    margin: 0;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+/* Кастомизация чекбоксов */
+.merchandiser-checkbox input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--primary-color);
+}

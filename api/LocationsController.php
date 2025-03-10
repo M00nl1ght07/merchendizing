@@ -195,5 +195,118 @@ class LocationsController extends Api {
             $this->error($e->getMessage());
         }
     }
+
+    public function getLocationMerchandisers() {
+        try {
+            session_start();
+            if (!isset($_SESSION['user'])) {
+                $this->error('Необходима авторизация');
+            }
+
+            $locationId = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
+            if (!$locationId) {
+                $this->error('Некорректный ID точки');
+            }
+
+            // Получаем информацию о точке
+            $stmt = $this->db->prepare('
+                SELECT * FROM locations 
+                WHERE id = ? AND company_id = ?
+            ');
+            $stmt->execute([$locationId, $_SESSION['user']['company_id']]);
+            $location = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$location) {
+                $this->error('Точка не найдена');
+            }
+
+            // Получаем список мерчендайзеров компании из того же региона с отметкой о назначении
+            $stmt = $this->db->prepare('
+                SELECT 
+                    m.*,
+                    CASE WHEN ml.merchandiser_id IS NOT NULL THEN 1 ELSE 0 END as assigned
+                FROM merchandisers m
+                LEFT JOIN merchandiser_locations ml ON m.id = ml.merchandiser_id AND ml.location_id = ?
+                WHERE m.company_id = ? 
+                AND m.region = ?
+                ORDER BY m.name
+            ');
+            $stmt->execute([
+                $locationId, 
+                $_SESSION['user']['company_id'],
+                $location['region']
+            ]);
+            $merchandisers = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            $this->response([
+                'success' => true,
+                'location' => $location,
+                'merchandisers' => $merchandisers
+            ]);
+
+        } catch (Exception $e) {
+            $this->error($e->getMessage());
+        }
+    }
+
+    public function updateLocationMerchandisers() {
+        try {
+            session_start();
+            if (!isset($_SESSION['user'])) {
+                $this->error('Необходима авторизация');
+            }
+
+            $data = json_decode(file_get_contents('php://input'), true);
+            $locationId = $data['location_id'] ?? null;
+            $merchandiserIds = $data['merchandiser_ids'] ?? [];
+
+            if (!$locationId) {
+                $this->error('Некорректный ID точки');
+            }
+
+            // Проверяем принадлежность точки компании
+            $stmt = $this->db->prepare('
+                SELECT id FROM locations 
+                WHERE id = ? AND company_id = ?
+            ');
+            $stmt->execute([$locationId, $_SESSION['user']['company_id']]);
+            if (!$stmt->fetch()) {
+                $this->error('Точка не найдена');
+            }
+
+            // Начинаем транзакцию
+            $this->db->beginTransaction();
+
+            try {
+                // Удаляем все текущие связи для этой точки
+                $stmt = $this->db->prepare('
+                    DELETE FROM merchandiser_locations 
+                    WHERE location_id = ?
+                ');
+                $stmt->execute([$locationId]);
+
+                // Добавляем новые связи
+                if (!empty($merchandiserIds)) {
+                    $stmt = $this->db->prepare('
+                        INSERT INTO merchandiser_locations (merchandiser_id, location_id)
+                        VALUES (?, ?)
+                    ');
+                    foreach ($merchandiserIds as $merchandiserId) {
+                        $stmt->execute([$merchandiserId, $locationId]);
+                    }
+                }
+
+                $this->db->commit();
+                $this->response(['success' => true]);
+
+            } catch (Exception $e) {
+                $this->db->rollBack();
+                throw $e;
+            }
+
+        } catch (Exception $e) {
+            $this->error($e->getMessage());
+        }
+    }
 }
 ?> 

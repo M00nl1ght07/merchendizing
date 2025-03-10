@@ -30,6 +30,9 @@ const cityCoordinates = {
 // Объявляем loadLocations в глобальной области видимости
 let loadLocations;
 
+// Глобальная переменная для хранения текущей точки
+let currentLocationId = null;
+
 document.addEventListener('DOMContentLoaded', async function() {
     // Проверяем авторизацию
     const user = await checkAuth();
@@ -97,6 +100,9 @@ document.addEventListener('DOMContentLoaded', async function() {
                             </div>
                         </div>
                         <div class="location-actions">
+                            <button class="btn btn-icon" onclick="manageMerchandisers(${location.id})" title="Управление мерчендайзерами">
+                                <i class="fa fa-users"></i>
+                            </button>
                             <button class="btn btn-icon" onclick="editLocation(${location.id})" title="Редактировать">
                                 <i class="fa fa-pencil"></i>
                             </button>
@@ -300,5 +306,85 @@ function handleCoordinatesPaste(event) {
         event.target.value = pastedText;
     } else {
         showNotification('Неверный формат координат. Используйте формат: 55.790182, 49.112606', 'error');
+    }
+}
+
+// Функция открытия модального окна управления мерчендайзерами
+async function manageMerchandisers(locationId) {
+    try {
+        currentLocationId = locationId;
+        
+        // Получаем данные точки и список мерчендайзеров
+        const response = await fetch(`api/index.php?controller=locations&action=getLocationMerchandisers&id=${locationId}`);
+        const data = await response.json();
+
+        if (!data.success) {
+            throw new Error(data.error);
+        }
+
+        // Заполняем информацию о точке
+        const modal = document.getElementById('manageMerchandisersModal');
+        modal.querySelector('.location-name').textContent = data.location.name;
+        modal.querySelector('.location-address').textContent = data.location.address;
+
+        // Формируем список мерчендайзеров
+        const merchandisersList = modal.querySelector('.merchandisers-list');
+        merchandisersList.innerHTML = data.merchandisers.map(m => `
+            <div class="merchandiser-item">
+                <div class="merchandiser-checkbox">
+                    <input type="checkbox" value="${m.id}" ${m.assigned ? 'checked' : ''}>
+                </div>
+                <div class="merchandiser-info">
+                    <h6>${m.name}</h6>
+                    <p>${m.phone}</p>
+                </div>
+            </div>
+        `).join('');
+
+        // Открываем модальное окно
+        const modalInstance = new bootstrap.Modal(modal);
+        modalInstance.show();
+
+    } catch (error) {
+        console.error('Ошибка при загрузке мерчендайзеров:', error);
+        showNotification(error.message, 'error');
+    }
+}
+
+// Функция сохранения назначенных мерчендайзеров
+async function saveMerchandisers() {
+    try {
+        const modal = document.getElementById('manageMerchandisersModal');
+        const checkedMerchandisers = Array.from(modal.querySelectorAll('input[type="checkbox"]:checked'))
+            .map(cb => cb.value);
+
+        const response = await fetch('api/index.php?controller=locations&action=updateLocationMerchandisers', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                location_id: currentLocationId,
+                merchandiser_ids: checkedMerchandisers
+            })
+        });
+
+        const data = await response.json();
+
+        if (!data.success) {
+            throw new Error(data.error);
+        }
+
+        // Закрываем модальное окно
+        const modalInstance = bootstrap.Modal.getInstance(modal);
+        modalInstance.hide();
+
+        // Обновляем список точек
+        await loadLocations();
+        showNotification('Мерчендайзеры успешно обновлены');
+
+    } catch (error) {
+        console.error('Ошибка при сохранении мерчендайзеров:', error);
+        showNotification(error.message, 'error');
     }
 } 

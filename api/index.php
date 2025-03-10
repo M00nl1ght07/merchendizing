@@ -166,6 +166,12 @@ try {
                 case 'getLocation':
                     $locations->getLocation();
                     break;
+                case 'getLocationMerchandisers':
+                    $locations->getLocationMerchandisers();
+                    break;
+                case 'updateLocationMerchandisers':
+                    $locations->updateLocationMerchandisers();
+                    break;
                 default:
                     throw new Exception('Неизвестное действие');
             }

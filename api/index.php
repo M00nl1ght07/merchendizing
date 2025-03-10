@@ -15,6 +15,7 @@ require_once 'ProfileController.php';
 require_once 'SettingsController.php';
 require_once 'ReportsController.php';
 require_once 'MerchandisersController.php';
+require_once 'LocationsController.php';
 
 // Устанавливаем заголовки
 header('Access-Control-Allow-Origin: *');
@@ -142,6 +143,28 @@ try {
                     break;
                 case 'deleteMerchandiser':
                     $merchandisers->deleteMerchandiser();
+                    break;
+                default:
+                    throw new Exception('Неизвестное действие');
+            }
+            break;
+        case 'locations':
+            $locations = new LocationsController($db);
+            switch ($action) {
+                case 'getLocations':
+                    $locations->getLocations();
+                    break;
+                case 'addLocation':
+                    $locations->addLocation();
+                    break;
+                case 'updateLocation':
+                    $locations->updateLocation();
+                    break;
+                case 'deleteLocation':
+                    $locations->deleteLocation();
+                    break;
+                case 'getLocation':
+                    $locations->getLocation();
                     break;
                 default:
                     throw new Exception('Неизвестное действие');

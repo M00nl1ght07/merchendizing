@@ -143,26 +143,30 @@
                     <form id="addLocationForm">
                         <div class="mb-3">
                             <label class="form-label">Название</label>
-                            <input type="text" class="form-control" required>
+                            <input type="text" class="form-control" name="name" required>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Адрес</label>
-                            <input type="text" class="form-control" required>
+                            <input type="text" class="form-control" name="address" required>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Координаты</label>
-                            <div class="input-group">
-                                <input type="text" class="form-control" placeholder="Широта" required>
-                                <input type="text" class="form-control" placeholder="Долгота" required>
+                            <div class="input-group mb-2">
+                                <input type="text" class="form-control" id="coordinatesInput" placeholder="Вставьте координаты из Яндекс Карт (например: 55.790182, 49.112606)" onpaste="handleCoordinatesPaste(event)">
                             </div>
+                            <div class="input-group">
+                                <input type="number" step="any" class="form-control" name="latitude" placeholder="Широта" required>
+                                <input type="number" step="any" class="form-control" name="longitude" placeholder="Долгота" required>
+                            </div>
+                            <small class="text-muted">Скопируйте координаты из Яндекс Карт и вставьте их в поле выше</small>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Регион</label>
-                            <select class="form-select" required>
+                            <select class="form-select" name="region" required>
                                 <option value="">Выберите регион</option>
-                                <option>Москва</option>
-                                <option>Санкт-Петербург</option>
-                                <option>Казань</option>
+                                <option value="Москва">Москва</option>
+                                <option value="Санкт-Петербург">Санкт-Петербург</option>
+                                <option value="Казань">Казань</option>
                             </select>
                         </div>
                     </form>
@@ -175,6 +179,56 @@
         </div>
     </div>
 
+    <!-- Модальное окно редактирования точки -->
+    <div class="modal fade" id="editLocationModal">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Редактировать точку продаж</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editLocationForm">
+                        <input type="hidden" name="id">
+                        <div class="mb-3">
+                            <label class="form-label">Название</label>
+                            <input type="text" class="form-control" name="name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Адрес</label>
+                            <input type="text" class="form-control" name="address" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Координаты</label>
+                            <div class="input-group mb-2">
+                                <input type="text" class="form-control" id="coordinatesInput" placeholder="Вставьте координаты из Яндекс Карт (например: 55.790182, 49.112606)" onpaste="handleCoordinatesPaste(event)">
+                            </div>
+                            <div class="input-group">
+                                <input type="number" step="any" class="form-control" name="latitude" placeholder="Широта" required>
+                                <input type="number" step="any" class="form-control" name="longitude" placeholder="Долгота" required>
+                            </div>
+                            <small class="text-muted">Скопируйте координаты из Яндекс Карт и вставьте их в поле выше</small>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Регион</label>
+                            <select class="form-select" name="region" required>
+                                <option value="">Выберите регион</option>
+                                <option value="Москва">Москва</option>
+                                <option value="Санкт-Петербург">Санкт-Петербург</option>
+                                <option value="Казань">Казань</option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" form="editLocationForm" class="btn btn-primary">Сохранить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/auth.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="js/components.js"></script>

@@ -37,12 +37,14 @@ document.addEventListener('DOMContentLoaded', async function() {
         const user = JSON.parse(localStorage.getItem('user'));
         if (!user) throw new Error('Пользователь не авторизован');
 
-        // Скрываем кнопки для мерчендайзера
+        // Скрываем элементы управления для мерчендайзера
         if (user.type === 'merchandiser') {
-            const addButton = document.querySelector('.btn-add-location');
+            // Скрываем кнопку добавления точки (исправляем селектор)
+            const addButton = document.querySelector('button[data-bs-target="#addLocationModal"]');
             if (addButton) {
                 addButton.style.display = 'none';
             }
+            // Скрываем все кнопки действий с точками
             document.querySelectorAll('.location-actions').forEach(el => {
                 el.style.display = 'none';
             });
@@ -54,16 +56,19 @@ document.addEventListener('DOMContentLoaded', async function() {
             attribution: '© OpenStreetMap contributors'
         }).addTo(map);
 
-        // Добавляем обработчик поиска по названию
+        // Получаем элементы фильтрации
         const searchInput = document.querySelector('input[placeholder="Поиск по названию..."]');
+        const regionSelect = document.querySelector('select.form-select');
+
+        // Добавляем обработчик поиска по названию
         if (searchInput) {
             searchInput.addEventListener('input', debounce(async function() {
-                await updateMap(regionSelect.value, this.value);
+                const region = regionSelect ? regionSelect.value : '';
+                await updateMap(region, this.value);
             }, 300));
         }
 
         // Обновляем обработчик изменения региона
-        const regionSelect = document.querySelector('select.form-select');
         if (regionSelect) {
             regionSelect.addEventListener('change', async function() {
                 const selectedRegion = this.value.toLowerCase();
@@ -133,6 +138,10 @@ async function updateMap(region = '', search = '') {
                 `);
             markers.push(marker);
 
+            // Получаем тип пользователя
+            const user = JSON.parse(localStorage.getItem('user'));
+            const isAdmin = user && user.type === 'admin';
+
             // Возвращаем HTML для списка
             return `
                 <div class="location-item" data-id="${location.id}">
@@ -145,17 +154,19 @@ async function updateMap(region = '', search = '') {
                             <span><i class="fa fa-line-chart"></i> ${Math.round(location.efficiency)}%</span>
                         </div>
                     </div>
-                    <div class="location-actions">
-                        <button class="btn btn-sm btn-success" onclick="manageMerchandisers(${location.id})">
-                            <i class="fa fa-users"></i>
-                        </button>
-                        <button class="btn btn-sm btn-primary" onclick="editLocation(${location.id})">
-                            <i class="fa fa-edit"></i>
-                        </button>
-                        <button class="btn btn-sm btn-danger" onclick="deleteLocation(${location.id}, '${location.name}')">
-                            <i class="fa fa-trash"></i>
-                        </button>
-                    </div>
+                    ${isAdmin ? `
+                        <div class="location-actions">
+                            <button class="btn btn-sm btn-success" onclick="manageMerchandisers(${location.id})">
+                                <i class="fa fa-users"></i>
+                            </button>
+                            <button class="btn btn-sm btn-primary" onclick="editLocation(${location.id})">
+                                <i class="fa fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteLocation(${location.id}, '${location.name}')">
+                                <i class="fa fa-trash"></i>
+                            </button>
+                        </div>
+                    ` : ''}
                 </div>
             `;
         }).join('');

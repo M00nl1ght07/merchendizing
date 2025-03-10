@@ -16,6 +16,7 @@ require_once 'SettingsController.php';
 require_once 'ReportsController.php';
 require_once 'MerchandisersController.php';
 require_once 'LocationsController.php';
+require_once 'StatsController.php';
 
 // Устанавливаем заголовки
 header('Access-Control-Allow-Origin: *');
@@ -183,6 +184,19 @@ try {
                     break;
                 case 'getMerchandiserLocations':
                     $locations->getMerchandiserLocations();
+                    break;
+                default:
+                    throw new Exception('Неизвестное действие');
+            }
+            break;
+        case 'stats':
+            $stats = new StatsController($db);
+            switch ($action) {
+                case 'updateStats':
+                    $stats->updateStats();
+                    break;
+                case 'getDashboardStats':
+                    $stats->getDashboardStats();
                     break;
                 default:
                     throw new Exception('Неизвестное действие');

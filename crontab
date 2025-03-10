@@ -1,0 +1,1 @@
+0 0 * * * curl https://www.merchandising-moscow.ru/api/index.php?controller=stats&action=updateStats 

@@ -70,13 +70,13 @@ CREATE TABLE reports (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Фотографии к отчетам
-CREATE TABLE report_photos (
-    id SERIAL PRIMARY KEY,
-    report_id INTEGER REFERENCES reports(id),
-    photo_url TEXT NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+-- -- Фотографии к отчетам
+-- CREATE TABLE report_photos (
+--     id SERIAL PRIMARY KEY,
+--     report_id INTEGER REFERENCES reports(id),
+--     photo_url TEXT NOT NULL,
+--     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+-- );
 
 -- Уведомления
 CREATE TABLE notifications (
@@ -124,3 +124,102 @@ CREATE TABLE region_stats (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE (company_id, region, date)
 );
+
+-- Триггер для обновления merchandiser_stats при добавлении/обновлении отчета
+DELIMITER //
+CREATE TRIGGER update_merchandiser_stats AFTER INSERT ON reports
+FOR EACH ROW
+BEGIN
+    -- Обновляем или добавляем статистику мерчандайзера за день
+    INSERT INTO merchandiser_stats (merchandiser_id, date, visits_count, reports_count, efficiency_avg)
+    SELECT 
+        NEW.merchandiser_id,
+        DATE(NEW.visit_date),
+        COUNT(DISTINCT r.id),
+        COUNT(DISTINCT CASE WHEN r.status = 'approved' THEN r.id END),
+        AVG(r.efficiency)
+    FROM reports r
+    WHERE r.merchandiser_id = NEW.merchandiser_id 
+    AND DATE(r.visit_date) = DATE(NEW.visit_date)
+    GROUP BY r.merchandiser_id, DATE(r.visit_date)
+    ON DUPLICATE KEY UPDATE
+        visits_count = VALUES(visits_count),
+        reports_count = VALUES(reports_count),
+        efficiency_avg = VALUES(efficiency_avg);
+END;//
+
+-- Триггер для обновления region_stats при добавлении/обновлении отчета
+CREATE TRIGGER update_region_stats AFTER INSERT ON reports
+FOR EACH ROW
+BEGIN
+    -- Получаем регион из локации
+    DECLARE v_region VARCHAR(100);
+    DECLARE v_company_id INTEGER;
+    
+    SELECT l.region, l.company_id INTO v_region, v_company_id
+    FROM locations l
+    WHERE l.id = NEW.location_id;
+
+    -- Обновляем или добавляем статистику региона за день
+    INSERT INTO region_stats (company_id, region, date, merchandisers_count, locations_count, efficiency_avg)
+    SELECT 
+        v_company_id,
+        v_region,
+        DATE(NEW.visit_date),
+        COUNT(DISTINCT m.id),
+        COUNT(DISTINCT l.id),
+        AVG(r.efficiency)
+    FROM reports r
+    JOIN locations l ON r.location_id = l.id
+    JOIN merchandisers m ON r.merchandiser_id = m.id
+    WHERE l.region = v_region 
+    AND DATE(r.visit_date) = DATE(NEW.visit_date)
+    GROUP BY l.region, DATE(r.visit_date)
+    ON DUPLICATE KEY UPDATE
+        merchandisers_count = VALUES(merchandisers_count),
+        locations_count = VALUES(locations_count),
+        efficiency_avg = VALUES(efficiency_avg);
+END;//
+DELIMITER ;
+
+-- Процедура для первоначального заполнения статистики
+DELIMITER //
+CREATE PROCEDURE fill_initial_stats()
+BEGIN
+    -- Заполняем merchandiser_stats
+    INSERT INTO merchandiser_stats (merchandiser_id, date, visits_count, reports_count, efficiency_avg)
+    SELECT 
+        r.merchandiser_id,
+        DATE(r.visit_date),
+        COUNT(DISTINCT r.id),
+        COUNT(DISTINCT CASE WHEN r.status = 'approved' THEN r.id END),
+        AVG(r.efficiency)
+    FROM reports r
+    GROUP BY r.merchandiser_id, DATE(r.visit_date)
+    ON DUPLICATE KEY UPDATE
+        visits_count = VALUES(visits_count),
+        reports_count = VALUES(reports_count),
+        efficiency_avg = VALUES(efficiency_avg);
+
+    -- Заполняем region_stats
+    INSERT INTO region_stats (company_id, region, date, merchandisers_count, locations_count, efficiency_avg)
+    SELECT 
+        l.company_id,
+        l.region,
+        DATE(r.visit_date),
+        COUNT(DISTINCT m.id),
+        COUNT(DISTINCT l.id),
+        AVG(r.efficiency)
+    FROM reports r
+    JOIN locations l ON r.location_id = l.id
+    JOIN merchandisers m ON r.merchandiser_id = m.id
+    GROUP BY l.company_id, l.region, DATE(r.visit_date)
+    ON DUPLICATE KEY UPDATE
+        merchandisers_count = VALUES(merchandisers_count),
+        locations_count = VALUES(locations_count),
+        efficiency_avg = VALUES(efficiency_avg);
+END;//
+DELIMITER ;
+
+-- Вызываем процедуру для первоначального заполнения
+CALL fill_initial_stats();

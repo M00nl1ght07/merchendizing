@@ -1,33 +1,33 @@
-# MerchandiseControl - Система управления мерчандайзингом
+# 🏪 MerchandiseControl - Система управления мерчандайзингом
 
-## Содержание
+## 📑 Содержание
 1. [Обзор проекта](#обзор-проекта)
 2. [Технологический стек](#технологический-стек)
 3. [Структура проекта](#структура-проекта)
-4. [Установка и настройка](#установка-и-настройка)
-5. [База данных](#база-данных)
-6. [API документация](#api-документация)
-7. [Функционал](#функционал)
-8. [Безопасность](#безопасность)
-9. [Разработка](#разработка)
-10. [Лицензия](#лицензия)
+4. [База данных](#база-данных)
+5. [API документация](#api-документация)
+6. [Функционал](#функционал)
+7. [Безопасность](#безопасность)
+8. [Разработка](#разработка)
+9. [Тестовые учетные записи](#тестовые-учетные-записи)
+10. [Лицензия и поддержка](#лицензия-и-поддержка)
 
-## Обзор проекта
+## 📋 Обзор проекта
 
 MerchandiseControl - это веб-система для управления мерчандайзингом, которая позволяет компаниям эффективно контролировать работу мерчандайзеров, отслеживать посещения торговых точек и анализировать эффективность работы.
 
-### Основные возможности:
-- Управление мерчандайзерами и их задачами
-- Контроль посещений торговых точек
-- Создание и проверка отчетов
-- Статистика и аналитика эффективности
-- Управление торговыми точками
-- Система уведомлений
-- Разграничение прав доступа
+### ⭐ Основные возможности:
+- 👥 Управление мерчандайзерами и их задачами
+- 📍 Контроль посещений торговых точек
+- 📊 Создание и проверка отчетов
+- 📈 Статистика и аналитика эффективности
+- 🏪 Управление торговыми точками
+- 🔔 Система уведомлений
+- 🔒 Разграничение прав доступа
 
-## Технологический стек
+## 🛠️ Технологический стек
 
-### Frontend:
+### 🎨 Frontend:
 - HTML5
 - CSS3
 - JavaScript (ES6+)
@@ -36,18 +36,18 @@ MerchandiseControl - это веб-система для управления м
 - Leaflet.js (для карт)
 - Font Awesome 4.7.0
 
-### Backend:
+### ⚙️ Backend:
 - PHP 8.0+
 - MySQL 8.0
 
-### Безопасность:
+### 🔒 Безопасность:
 
 - Хеширование паролей (Bcrypt)
 - CSRF защита
 - XSS защита
 - Валидация данных 
 
-## Структура проекта
+## 📁 Структура проекта
 
 ```
 merchandising/
@@ -83,120 +83,33 @@ merchandising/
 └── index.html                     # Страница входа
 ```
 
-## База данных
+## 💾 База данных
 
-### ERD Диаграмма
+### 📊 ERD Диаграмма
 ```mermaid
-erDiagram
-    companies ||--o{ users : has
-    companies ||--o{ merchandisers : has
-    companies ||--o{ locations : has
-    companies ||--o{ region_stats : has
-    merchandisers ||--o{ merchandiser_locations : has
-    locations ||--o{ merchandiser_locations : assigned
-    merchandisers ||--o{ reports : creates
-    locations ||--o{ reports : about
-    merchandisers ||--o{ merchandiser_stats : tracks
-    
-    companies {
-        int id PK
-        string name
-        string inn
-        string address
-        string phone
-        string logo_url
-        timestamp created_at
-    }
-    
-    users {
-        int id PK
-        int company_id FK
-        string email
-        string password_hash
-        string name
-        string avatar_url
-        string role
-        string phone
-        timestamp created_at
-    }
-    
-    merchandisers {
-        int id PK
-        int company_id FK
-        string name
-        string email
-        string phone
-        string avatar_url
-        string region
-        string status
-        string password_hash
-        timestamp created_at
-    }
-    
-    locations {
-        int id PK
-        int company_id FK
-        string name
-        string address
-        string region
-        float latitude
-        float longitude
-        int merchandisers_count
-        float efficiency_avg
-        timestamp created_at
-    }
-    
-    merchandiser_locations {
-        int merchandiser_id FK
-        int location_id FK
-    }
-    
-    reports {
-        int id PK
-        int merchandiser_id FK
-        int location_id FK
-        timestamp visit_date
-        string status
-        string comment
-        int efficiency
-        string excel_url
-        timestamp created_at
-    }
-    
-    merchandiser_stats {
-        int id PK
-        int merchandiser_id FK
-        date date
-        int visits_count
-        int reports_count
-        float efficiency_avg
-        timestamp created_at
-    }
-    
-    region_stats {
-        int id PK
-        int company_id FK
-        string region
-        date date
-        int merchandisers_count
-        int locations_count
-        float efficiency_avg
-        timestamp created_at
-    }
-}
+graph LR
+    A[Companies] --> B[Users]
+    A --> C[Merchandisers]
+    A --> D[Locations]
+    A --> E[Region Stats]
+    C --> F[Merchandiser Locations]
+    D --> F
+    C --> G[Reports]
+    D --> G
+    C --> H[Merchandiser Stats]
 ```
 
-### Основные таблицы:
+### 📋 Основные таблицы:
 
 1. `companies`
 ```sql
 CREATE TABLE companies (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    inn VARCHAR(12) NOT NULL UNIQUE,
-    address TEXT NOT NULL,
-    phone VARCHAR(20) NOT NULL,
-    logo_url TEXT,
+    id PK
+    name VARCHAR(255) NOT NULL
+    inn VARCHAR(12) NOT NULL UNIQUE
+    address TEXT NOT NULL
+    phone VARCHAR(20) NOT NULL
+    logo_url TEXT
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 ```
@@ -204,14 +117,14 @@ CREATE TABLE companies (
 2. `users`
 ```sql
 CREATE TABLE users (
-    id SERIAL PRIMARY KEY,
-    company_id INTEGER REFERENCES companies(id),
-    email VARCHAR(255) NOT NULL UNIQUE,
-    password_hash VARCHAR(255) NOT NULL,
-    name VARCHAR(255) NOT NULL,
-    avatar_url TEXT,
-    role VARCHAR(50) DEFAULT 'admin',
-    phone VARCHAR(20),
+    id PK
+    company_id FK
+    email VARCHAR(255) NOT NULL UNIQUE
+    password_hash VARCHAR(255) NOT NULL
+    name VARCHAR(255) NOT NULL
+    avatar_url TEXT
+    role VARCHAR(50) DEFAULT 'admin'
+    phone VARCHAR(20)
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 ```
@@ -219,14 +132,14 @@ CREATE TABLE users (
 3. `merchandisers`
 ```sql
 CREATE TABLE merchandisers (
-    id SERIAL PRIMARY KEY,
-    company_id INTEGER REFERENCES companies(id),
-    name VARCHAR(255) NOT NULL,
-    email VARCHAR(255) NOT NULL UNIQUE,
-    password_hash VARCHAR(255) NOT NULL,
-    phone VARCHAR(20),
-    region VARCHAR(100),
-    status VARCHAR(50) DEFAULT 'active',
+    id PK
+    company_id FK
+    name VARCHAR(255) NOT NULL
+    email VARCHAR(255) NOT NULL UNIQUE
+    password_hash VARCHAR(255) NOT NULL
+    phone VARCHAR(20)
+    region VARCHAR(100)
+    status VARCHAR(50) DEFAULT 'active'
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 ```
@@ -234,13 +147,13 @@ CREATE TABLE merchandisers (
 4. `locations`
 ```sql
 CREATE TABLE locations (
-    id SERIAL PRIMARY KEY,
-    company_id INTEGER REFERENCES companies(id),
-    name VARCHAR(255) NOT NULL,
-    address TEXT NOT NULL,
-    region VARCHAR(100),
-    coordinates POINT,
-    status VARCHAR(50) DEFAULT 'active',
+    id PK
+    company_id FK
+    name VARCHAR(255) NOT NULL
+    address TEXT NOT NULL
+    region VARCHAR(100)
+    coordinates POINT
+    status VARCHAR(50) DEFAULT 'active'
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 ```
@@ -248,8 +161,8 @@ CREATE TABLE locations (
 5. `merchandiser_locations`
 ```sql
 CREATE TABLE merchandiser_locations (
-    merchandiser_id INTEGER REFERENCES merchandisers(id),
-    location_id INTEGER REFERENCES locations(id),
+    merchandiser_id FK
+    location_id FK
     PRIMARY KEY (merchandiser_id, location_id)
 );
 ```
@@ -257,14 +170,14 @@ CREATE TABLE merchandiser_locations (
 6. `reports`
 ```sql
 CREATE TABLE reports (
-    id SERIAL PRIMARY KEY,
-    merchandiser_id INTEGER REFERENCES merchandisers(id),
-    location_id INTEGER REFERENCES locations(id),
-    visit_date TIMESTAMP NOT NULL,
-    status VARCHAR(50) DEFAULT 'draft',
-    efficiency INTEGER CHECK (efficiency BETWEEN 0 AND 100),
-    photos TEXT[],
-    notes TEXT,
+    id PK
+    merchandiser_id FK
+    location_id FK
+    visit_date TIMESTAMP NOT NULL
+    status VARCHAR(50) DEFAULT 'draft'
+    efficiency INTEGER CHECK (efficiency BETWEEN 0 AND 100)
+    photos TEXT[]
+    notes TEXT
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 ```
@@ -272,12 +185,12 @@ CREATE TABLE reports (
 7. `merchandiser_stats`
 ```sql
 CREATE TABLE merchandiser_stats (
-    id SERIAL PRIMARY KEY,
-    merchandiser_id INTEGER REFERENCES merchandisers(id),
-    date DATE NOT NULL,
-    visits_count INTEGER DEFAULT 0,
-    reports_count INTEGER DEFAULT 0,
-    efficiency_avg DECIMAL(5,2),
+    id PK
+    merchandiser_id FK
+    date DATE NOT NULL
+    visits_count INTEGER DEFAULT 0
+    reports_count INTEGER DEFAULT 0
+    efficiency_avg DECIMAL(5,2)
     UNIQUE (merchandiser_id, date)
 );
 ```
@@ -285,20 +198,20 @@ CREATE TABLE merchandiser_stats (
 8. `region_stats`
 ```sql
 CREATE TABLE region_stats (
-    id SERIAL PRIMARY KEY,
-    company_id INTEGER REFERENCES companies(id),
-    region VARCHAR(100),
-    date DATE NOT NULL,
-    merchandisers_count INTEGER DEFAULT 0,
-    locations_count INTEGER DEFAULT 0,
-    efficiency_avg DECIMAL(5,2),
+    id PK
+    company_id FK
+    region VARCHAR(100)
+    date DATE NOT NULL
+    merchandisers_count INTEGER DEFAULT 0
+    locations_count INTEGER DEFAULT 0
+    efficiency_avg DECIMAL(5,2)
     UNIQUE (company_id, region, date)
 );
 ```
 
-## API документация
+## 🔌 API документация
 
-### Аутентификация
+### 🔑 Аутентификация
 
 1. Вход в систему
 ```http
@@ -335,7 +248,7 @@ Response:
 }
 ```
 
-### Мерчандайзеры
+### 👥 Мерчандайзеры
 
 1. Получение списка
 ```http
@@ -388,7 +301,7 @@ Response:
 }
 ```
 
-### Локации
+### 📍 Локации
 
 1. Получение списка
 ```http
@@ -436,7 +349,7 @@ Response:
 }
 ```
 
-### Отчеты
+### 📝 Отчеты
 
 1. Создание отчета
 ```http
@@ -503,70 +416,84 @@ Response:
 }
 ``` 
 
-## Функционал
+## ⚡ Функционал
 
-### Дашборд
+### 📊 Дашборд
 - Отображение ключевых метрик компании
 - График активности мерчандайзеров
 - График эффективности по регионам
 - Фильтрация по периодам (неделя/месяц/год)
 - Интерактивные графики с всплывающими подсказками
 
-### Управление мерчандайзерами
+### 👥 Управление мерчандайзерами
 - Добавление/редактирование/удаление мерчандайзеров
 - Назначение регионов работы
 - Управление статусами активности
 - Просмотр индивидуальной статистики
 - Привязка к торговым точкам
 
-### Управление локациями
+### 📍 Управление локациями
 - Добавление/редактирование/удаление точек
 - Отображение на интерактивной карте
 - Привязка к регионам
 - Назначение мерчандайзеров
 - Просмотр истории посещений
 
-### Отчеты
+### 📝 Отчеты
 - Создание отчетов о посещениях
 - Загрузка фотографий с точки
 - Оценка эффективности работы
 - Статусы проверки отчетов
 - Комментарии и заметки
 
-### Статистика
+### 📈 Статистика
 - Автоматический расчет KPI
 - Генерация отчетов по периодам
 - Визуализация данных через графики
 - Экспорт статистики в Excel
 
-## Безопасность
+## 🔒 Безопасность
 
-### Аутентификация
+### 🔑 Аутентификация
 - Хеширование паролей через Bcrypt
 - Защита от брутфорса через ограничение попыток
 - Автоматический выход при неактивности
 
-### Авторизация
+### 👮 Авторизация
 - Разделение прав доступа (админ/мерчандайзер)
 - Проверка принадлежности к компании
 - Валидация всех действий
 - Логирование важных операций
 
-### Защита данных
+### 🛡️ Защита данных
 - Prepared statements для SQL
 - Валидация всех входных данных
 
-## Разработка
+## 🔧 Разработка
 
-### Требования к окружению
+### 📋 Требования к окружению
 - PHP 8.0+
 - MySQL 8.0+
 
-## Лицензия
+## 📄 Лицензия и поддержка
 
 MIT License. См. файл LICENSE для деталей.
 
-## Поддержка
+## 🔑 Тестовые учетные записи
+
+### 👨‍💼 Администраторы
+| Email | Пароль |
+|-------|---------|
+| riga@fpi.ru | 12345678 |
+
+### 👥 Менеджеры
+| Email | Пароль |
+|-------|---------|
+| ivanov@mail.ru | 12345678 |
+| petrova@ya.ru | 12345678 |
+| eliseev@yandex.ru | 12345678 |
+
+## 💬 Поддержка
 
 По вопросам поддержки обращайтесь:
-- Telegram: @svlkff 
+- 📱 Telegram: @svlkff 

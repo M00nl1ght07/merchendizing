@@ -87,16 +87,121 @@ merchandising/
 
 ### 📊 ERD Диаграмма
 ```mermaid
-graph LR
-    A[Companies] --> B[Users]
-    A --> C[Merchandisers]
-    A --> D[Locations]
-    A --> E[Region Stats]
-    C --> F[Merchandiser Locations]
-    D --> F
-    C --> G[Reports]
-    D --> G
-    C --> H[Merchandiser Stats]
+erDiagram
+    companies ||--o{ users : has
+    companies ||--o{ merchandisers : has
+    companies ||--o{ locations : has
+    companies ||--o{ region_stats : has
+    companies ||--o{ notifications : has
+    companies ||--o{ integrations : has
+    
+    merchandisers ||--o{ merchandiser_locations : has
+    locations ||--o{ merchandiser_locations : has
+    merchandisers ||--o{ reports : creates
+    locations ||--o{ reports : about
+    merchandisers ||--o{ merchandiser_stats : tracks
+    users ||--o{ notifications : receives
+    
+    companies {
+        int id PK
+        string name
+        string inn
+        string address
+        string phone
+        string logo_url
+        timestamp created_at
+    }
+    
+    users {
+        int id PK
+        int company_id FK
+        string email
+        string password_hash
+        string name
+        string avatar_url
+        string role
+        string phone
+        timestamp created_at
+    }
+    
+    merchandisers {
+        int id PK
+        int company_id FK
+        string name
+        string email
+        string phone
+        string avatar_url
+        string region
+        string status
+        string password_hash
+        timestamp created_at
+    }
+    
+    locations {
+        int id PK
+        int company_id FK
+        string name
+        string address
+        string region
+        decimal latitude
+        decimal longitude
+        int merchandisers_count
+        int efficiency_avg
+        timestamp created_at
+    }
+    
+    reports {
+        int id PK
+        int merchandiser_id FK
+        int location_id FK
+        timestamp visit_date
+        string status
+        string comment
+        int efficiency
+        string excel_url
+        timestamp created_at
+    }
+    
+    merchandiser_stats {
+        int id PK
+        int merchandiser_id FK
+        date date
+        int visits_count
+        int reports_count
+        int efficiency_avg
+        timestamp created_at
+    }
+    
+    region_stats {
+        int id PK
+        int company_id FK
+        string region
+        date date
+        int merchandisers_count
+        int locations_count
+        int efficiency_avg
+        timestamp created_at
+    }
+    
+    notifications {
+        int id PK
+        int company_id FK
+        int user_id FK
+        string title
+        string message
+        string type
+        boolean is_read
+        timestamp created_at
+    }
+    
+    integrations {
+        int id PK
+        int company_id FK
+        string type
+        string status
+        timestamp last_sync_at
+        timestamp created_at
+    }
 ```
 
 ### 📋 Основные таблицы:

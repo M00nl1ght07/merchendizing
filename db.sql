@@ -70,14 +70,6 @@ CREATE TABLE reports (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- -- Фотографии к отчетам
--- CREATE TABLE report_photos (
---     id SERIAL PRIMARY KEY,
---     report_id INTEGER REFERENCES reports(id),
---     photo_url TEXT NOT NULL,
---     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
--- );
-
 -- Уведомления
 CREATE TABLE notifications (
     id SERIAL PRIMARY KEY,

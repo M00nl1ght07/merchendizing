@@ -24,8 +24,8 @@ header('Access-Control-Allow-Methods: GET, POST, DELETE');
 header('Access-Control-Allow-Headers: Content-Type');
 header('Content-Type: application/json; charset=utf-8');
 
-$action = $_GET['action'] ?? '';
-$controller = $_GET['controller'] ?? '';
+$controller = $_GET['controller'] ?? 'auth';
+$action = $_GET['action'] ?? 'index';
 
 try {
     switch ($controller) {
@@ -106,6 +106,12 @@ try {
                     break;
                 case 'updateCompany':
                     $settings->updateCompany();
+                    break;
+                case 'getIntegrations':
+                    $settings->getIntegrations();
+                    break;
+                case 'updateIntegration':
+                    $settings->updateIntegration();
                     break;
                 default:
                     throw new Exception('Неизвестное действие');

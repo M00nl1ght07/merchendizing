@@ -134,10 +134,92 @@ class ReportsController extends Api {
                 $fileName
             ]);
 
+            // После успешной загрузки и сохранения в БД, добавляем отправку уведомления
+            $reportData = [
+                'merchandiser_id' => $user['id'],
+                'location_id' => $_POST['location_id'],
+                'visit_date' => $_POST['visit_date'],
+                'comment' => $_POST['comment'] ?? ''
+            ];
+
+            // Отправляем уведомление администраторам
+            $this->notifyAdminsAboutNewReport($reportData);
+
             $this->response(['success' => true]);
 
         } catch (Exception $e) {
             $this->error($e->getMessage());
+        }
+    }
+
+    private function notifyAdminsAboutNewReport($reportData) {
+        try {
+            // Получаем ID компании мерчендайзера
+            $stmt = $this->db->prepare('
+                SELECT company_id FROM merchandisers WHERE id = ?
+            ');
+            $stmt->execute([$reportData['merchandiser_id']]);
+            $companyId = $stmt->fetchColumn();
+            
+            if (!$companyId) {
+                return false;
+            }
+            
+            // Получаем данные локации
+            $stmt = $this->db->prepare('
+                SELECT name FROM locations WHERE id = ?
+            ');
+            $stmt->execute([$reportData['location_id']]);
+            $locationName = $stmt->fetchColumn();
+            
+            // Получаем данные мерчендайзера
+            $stmt = $this->db->prepare('
+                SELECT name FROM merchandisers WHERE id = ?
+            ');
+            $stmt->execute([$reportData['merchandiser_id']]);
+            $merchandiserName = $stmt->fetchColumn();
+            
+            // Получаем email всех администраторов компании
+            $stmt = $this->db->prepare('
+                SELECT email, name FROM users 
+                WHERE company_id = ? AND role = "admin"
+            ');
+            $stmt->execute([$companyId]);
+            $admins = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            if (empty($admins)) {
+                return false;
+            }
+            
+            // Подключаем файл с функцией отправки email
+            require_once __DIR__ . '/../config/mail.php';
+            
+            foreach ($admins as $admin) {
+                $subject = "Новый отчет от мерчендайзера";
+                
+                $visitDate = date('d.m.Y', strtotime($reportData['visit_date']));
+                
+                $body = "
+                    <html>
+                    <body>
+                        <h2>Загружен новый отчет</h2>
+                        <p>Здравствуйте, {$admin['name']}!</p>
+                        <p>Мерчендайзер <b>{$merchandiserName}</b> загрузил новый отчет о посещении точки <b>{$locationName}</b>.</p>
+                        <p><b>Дата посещения:</b> {$visitDate}</p>
+                        <p><b>Комментарий мерчендайзера:</b> {$reportData['comment']}</p>
+                        <p>Для просмотра отчета перейдите в <a href='https://www.merchandising-moscow.ru/reports.html'>панель управления</a>.</p>
+                        <p>С уважением,<br>Система MerchandiseControl</p>
+                    </body>
+                    </html>
+                ";
+                
+                sendMail($admin['email'], $subject, $body);
+            }
+            
+            return true;
+        } catch (Exception $e) {
+            error_log("Ошибка при отправке уведомления: " . $e->getMessage());
+            return false;
         }
     }
 

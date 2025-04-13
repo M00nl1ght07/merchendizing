@@ -85,7 +85,7 @@ merchandising/
 
 ## 💾 База данных
 
-### 📊 ERD Диаграмма
+### 📊 Даталогическая модель
 ```mermaid
 erDiagram
     companies ||--o{ users : has

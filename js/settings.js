@@ -70,6 +70,34 @@ document.addEventListener('DOMContentLoaded', async function() {
             });
         }
 
+        // Делаем все переключатели уведомлений включенными и неактивными
+        const notificationSwitches = document.querySelectorAll('.settings-section input[type="checkbox"]');
+        notificationSwitches.forEach(switchEl => {
+            // Включаем все переключатели
+            switchEl.checked = true;
+            
+            // Делаем их неактивными
+            switchEl.disabled = true;
+            
+            // Добавляем стили, чтобы визуально показать, что они всегда включены
+            const switchLabel = switchEl.closest('label') || switchEl.parentElement;
+            if (switchLabel) {
+                switchLabel.style.opacity = '1';
+                switchLabel.style.cursor = 'default';
+            }
+        });
+
+        // При отправке формы настроек уведомлений
+        const notificationsForm = document.getElementById('notificationsForm');
+        if (notificationsForm) {
+            notificationsForm.addEventListener('submit', function(e) {
+                // Убеждаемся, что все переключатели отмечены как включенные перед отправкой
+                notificationsForm.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+                    checkbox.checked = true;
+                });
+            });
+        }
+
     } catch (error) {
         console.error('Ошибка при загрузке настроек:', error);
         showNotification(error.message, 'error');

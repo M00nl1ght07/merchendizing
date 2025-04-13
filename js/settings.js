@@ -116,7 +116,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             // Кнопка 1C (первая в списке)
             if (integrationButtons[0]) {
                 integrationButtons[0].addEventListener('click', function() {
-                    alert('Подключение к системе 1С : предприятие в разработке');
+                    alert('Подключение к системе 1С:Предприятие в разработке');
                 });
             }
 

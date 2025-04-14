@@ -125,5 +125,113 @@ class SettingsController extends Api {
             $this->error($e->getMessage());
         }
     }
+
+    public function getIntegrations() {
+        try {
+            if (!isset($_SESSION['user'])) {
+                $this->error('Необходима авторизация');
+            }
+
+            $companyId = $_SESSION['user']['company_id'];
+            
+            // Получаем все интеграции для компании
+            $stmt = $this->db->prepare('
+                SELECT id, type, status, last_sync_at
+                FROM integrations 
+                WHERE company_id = ?
+            ');
+            $stmt->execute([$companyId]);
+            $integrations = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            // Если интеграций нет, создаем дефолтные
+            if (empty($integrations)) {
+                // Создаем запись для 1C интеграции
+                $stmt = $this->db->prepare('
+                    INSERT INTO integrations (company_id, type, status) 
+                    VALUES (?, "1c", "disabled")
+                ');
+                $stmt->execute([$companyId]);
+                
+                // Создаем запись для Excel интеграции
+                $stmt = $this->db->prepare('
+                    INSERT INTO integrations (company_id, type, status) 
+                    VALUES (?, "excel", "active")
+                ');
+                $stmt->execute([$companyId]);
+                
+                // Получаем созданные записи
+                $stmt = $this->db->prepare('
+                    SELECT id, type, status, last_sync_at
+                    FROM integrations 
+                    WHERE company_id = ?
+                ');
+                $stmt->execute([$companyId]);
+                $integrations = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            }
+
+            $this->response([
+                'success' => true,
+                'integrations' => $integrations
+            ]);
+
+        } catch (Exception $e) {
+            $this->error($e->getMessage());
+        }
+    }
+
+    public function updateIntegration() {
+        try {
+            if (!isset($_SESSION['user'])) {
+                $this->error('Необходима авторизация');
+            }
+            
+            // Проверяем права доступа
+            if ($_SESSION['user']['type'] !== 'admin') {
+                $this->error('Недостаточно прав для управления интеграциями');
+            }
+
+            $companyId = $_SESSION['user']['company_id'];
+            $type = $_POST['type'] ?? null;
+            $status = $_POST['status'] ?? null;
+            
+            if (!$type || !in_array($type, ['1c', 'excel'])) {
+                $this->error('Неверный тип интеграции');
+            }
+            
+            if (!$status || !in_array($status, ['active', 'disabled'])) {
+                $this->error('Неверный статус интеграции');
+            }
+            
+            // Проверяем существование интеграции
+            $stmt = $this->db->prepare('
+                SELECT id FROM integrations 
+                WHERE company_id = ? AND type = ?
+            ');
+            $stmt->execute([$companyId, $type]);
+            $integration = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if ($integration) {
+                // Обновляем существующую интеграцию
+                $stmt = $this->db->prepare('
+                    UPDATE integrations 
+                    SET status = ?, last_sync_at = NOW()
+                    WHERE company_id = ? AND type = ?
+                ');
+                $stmt->execute([$status, $companyId, $type]);
+            } else {
+                // Создаем новую интеграцию
+                $stmt = $this->db->prepare('
+                    INSERT INTO integrations (company_id, type, status) 
+                    VALUES (?, ?, ?)
+                ');
+                $stmt->execute([$companyId, $type, $status]);
+            }
+
+            $this->response(['success' => true]);
+
+        } catch (Exception $e) {
+            $this->error($e->getMessage());
+        }
+    }
 }
 ?> 

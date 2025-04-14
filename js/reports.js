@@ -96,6 +96,44 @@ async function loadMerchandiserLocations() {
 // Функция загрузки отчетов
 async function loadReports() {
     try {
+        // Проверяем статус интеграции Excel
+        const excelStatus = localStorage.getItem('excel_integration');
+        
+        // Если Excel интеграция отключена, показываем уведомление и очищаем таблицу
+        if (excelStatus === 'disabled') {
+            const table = document.querySelector('.table-reports tbody');
+            if (table) {
+                table.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="text-center">
+                            <div class="p-4">
+                                <i class="fa fa-ban text-muted mb-3" style="font-size: 48px;"></i>
+                                <p>Интеграция с Excel отключена. Включите её в настройках интеграций.</p>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }
+            
+            // Отключаем кнопку загрузки отчета
+            const uploadBtn = document.querySelector('[data-bs-target="#uploadReportModal"]');
+            if (uploadBtn) {
+                uploadBtn.disabled = true;
+                uploadBtn.style.opacity = '0.6';
+                uploadBtn.style.cursor = 'not-allowed';
+            }
+            
+            return;
+        }
+
+        // Включаем кнопку загрузки отчета, если Excel интеграция активна
+        const uploadBtn = document.querySelector('[data-bs-target="#uploadReportModal"]');
+        if (uploadBtn) {
+            uploadBtn.disabled = false;
+            uploadBtn.style.opacity = '1';
+            uploadBtn.style.cursor = 'pointer';
+        }
+
         console.log('Вызвана функция loadReports');
         
         const params = new URLSearchParams({
